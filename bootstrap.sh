@@ -48,19 +48,21 @@ interpolate() {
 # ─── Plugin handlers ──────────────────────────────────────────────────────────
 
 handle_repo() {
+    # Returns 0 if repo was newly added (caller should apt-get update),
+    # 1 if already present (skipped).
     local plugin="$1"
     local type sources_file
 
     type=$(echo "$plugin" | jq -r '.repo.type // empty')
-    [ -z "$type" ] && return 0
+    [ -z "$type" ] && return 1
 
     sources_file=$(interpolate "$(echo "$plugin" | jq -r '.repo.sources_file // empty')")
 
     case "$type" in
-        apt-key)
-            [ -n "$sources_file" ] && [ -f "$sources_file" ] && return 0
+        apt-key|apt-key-dearmor)
+            [ -n "$sources_file" ] && [ -f "$sources_file" ] && return 1
             local gpg_url gpg_keyring line
-            gpg_url=$(echo "$plugin"    | jq -r '.repo.gpg_url')
+            gpg_url=$(echo "$plugin"     | jq -r '.repo.gpg_url')
             gpg_keyring=$(echo "$plugin" | jq -r '.repo.gpg_keyring')
             line=$(interpolate "$(echo "$plugin" | jq -r '.repo.line')")
             curl -fsSL "$gpg_url" | gpg --yes --dearmor -o "$gpg_keyring"
@@ -69,17 +71,8 @@ handle_repo() {
         ppa)
             local ppa
             ppa=$(echo "$plugin" | jq -r '.repo.ppa')
-            apt-cache policy 2>/dev/null | grep -q "${ppa#ppa:}" && return 0
+            apt-cache policy 2>/dev/null | grep -q "${ppa#ppa:}" && return 1
             add-apt-repository -y "$ppa"
-            ;;
-        apt-key-dearmor)
-            [ -n "$sources_file" ] && [ -f "$sources_file" ] && return 0
-            local gpg_url gpg_keyring line
-            gpg_url=$(echo "$plugin"    | jq -r '.repo.gpg_url')
-            gpg_keyring=$(echo "$plugin" | jq -r '.repo.gpg_keyring')
-            line=$(interpolate "$(echo "$plugin" | jq -r '.repo.line')")
-            curl -fsSL "$gpg_url" | gpg --yes --dearmor -o "$gpg_keyring"
-            echo "$line" > "$sources_file"
             ;;
         script)
             local script
@@ -87,6 +80,7 @@ handle_repo() {
             bash -c "$(interpolate "$script")"
             ;;
     esac
+    return 0
 }
 
 handle_packages() {
@@ -130,9 +124,7 @@ handle_post_install() {
 
 # ─── Main loop ────────────────────────────────────────────────────────────────
 
-apt-get update -qq
-
-NEEDS_UPDATE=false
+REPOS_ADDED=0
 
 # First pass: set up all repos
 for plugin_file in "$PLUGINS_DIR"/*.json; do
@@ -148,10 +140,20 @@ for plugin_file in "$PLUGINS_DIR"/*.json; do
     [ -z "$repo_type" ] && continue
 
     info "Repo: $name"
-    handle_repo "$plugin" && NEEDS_UPDATE=true
+    if handle_repo "$plugin"; then
+        success "Added repo: $name"
+        REPOS_ADDED=$((REPOS_ADDED + 1))
+    else
+        success "Repo already present: $name"
+    fi
 done
 
-$NEEDS_UPDATE && apt-get update -qq
+if [ "$REPOS_ADDED" -gt 0 ]; then
+    info "Added $REPOS_ADDED new repo(s), running apt-get update..."
+    apt-get update -qq
+else
+    info "All repos already present, skipping apt-get update"
+fi
 
 # Second pass: install packages + manual + post-install
 for plugin_file in "$PLUGINS_DIR"/*.json; do
