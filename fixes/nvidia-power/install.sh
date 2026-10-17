@@ -8,14 +8,18 @@ rc=0; reason=$("$DIR/applies.sh") || rc=$?
 echo "==> Writing NVIDIA modprobe config..."
 CONF=/etc/modprobe.d/nvidia-graphics-drivers-kms.conf
 
-# NVreg_DynamicPowerManagement=0x02 only works on Turing (RTX 20xx) / Ampere and newer.
-# Maxwell (Quadro M-series, GM1xx/GM2xx) and Pascal ignore it; we skip it there.
-# nvidia-smi reports arch names like "Ampere", "Turing", "Maxwell", "Pascal" etc.
-GPU_ARCH=$(nvidia-smi --query-gpu=gpu_name --format=csv,noheader 2>/dev/null | head -1)
+# NVreg_DynamicPowerManagement=0x02 only works on Turing and newer.
+# Read the chip codename from lspci, not nvidia-smi: in prime-select intel mode the
+# driver isn't loaded and nvidia-smi only prints an error.
+#   GK=Kepler GM=Maxwell GP=Pascal GV=Volta | TU=Turing GA=Ampere AD=Ada GB=Blackwell GH=Hopper
+#   e.g. "GM107GLM [Quadro M2000M]" (Maxwell, no DPM), "GA107GLM [RTX A2000 Mobile]" (Ampere, DPM)
+GPU_LINE=$(lspci -nn | grep -E 'VGA|3D|Display' | grep -i nvidia | head -1 | sed 's/.*NVIDIA Corporation //; s/ \[10de:.*//')
+GPU_CHIP=$(echo "$GPU_LINE" | awk '{print $1}')
+GPU_ARCH="$GPU_LINE"
 SUPPORTS_DPM=false
-if echo "$GPU_ARCH" | grep -qiE 'RTX|Quadro.*A[0-9]|[Tt]uring|[Aa]mpere|[Aa]da|[Hh]opper'; then
-    SUPPORTS_DPM=true
-fi
+case "$GPU_CHIP" in
+    TU*|GA*|AD*|GB*|GH*) SUPPORTS_DPM=true ;;
+esac
 
 {
     echo "# /etc/modprobe.d/nvidia-graphics-drivers-kms.conf"
