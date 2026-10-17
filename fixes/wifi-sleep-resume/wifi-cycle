@@ -1,0 +1,25 @@
+#!/bin/bash
+# Cycle WiFi on suspend/resume to prevent Intel driver stuck-state bug.
+# Only acts when on battery (not on AC power).
+# Place in: /usr/lib/systemd/system-sleep/wifi-cycle
+
+IFACE="wlp147s0f0"
+
+on_battery() {
+    [ "$(cat /sys/class/power_supply/AC/online 2>/dev/null)" = "0" ]
+}
+
+case "$1" in
+    pre)
+        if on_battery; then
+            ip link set "$IFACE" down
+        fi
+        ;;
+    post)
+        if on_battery; then
+            ip link set "$IFACE" up
+            sleep 2
+            nmcli device connect "$IFACE" 2>/dev/null || true
+        fi
+        ;;
+esac
