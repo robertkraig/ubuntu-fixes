@@ -23,6 +23,12 @@ on resume, so the card always initialises from scratch.
 
 The driver and its dependents are detected at install time.
 
+The unload uses `rmmod`, not `modprobe -r`: Ubuntu's `/etc/modprobe.d/iwlwifi.conf`
+(from `kmod`) has its own `remove iwlwifi` rule, so `modprobe -r iwlmvm iwlwifi`
+unloads both on the first name and then fails on the second. A failed start
+means systemd never runs the reload on resume, leaving WiFi off. The unload
+step always exits 0 for that reason.
+
 ## Install
 
 ```bash

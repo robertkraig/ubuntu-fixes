@@ -24,7 +24,10 @@ StopWhenUnneeded=yes
 [Service]
 Type=oneshot
 RemainAfterExit=yes
-ExecStart=/usr/sbin/modprobe -r $HOLDERS$MODULE
+# rmmod, not modprobe -r: Ubuntu's /etc/modprobe.d/iwlwifi.conf has a "remove iwlwifi"
+# rule that unloads iwlmvm+iwlwifi itself, so "modprobe -r iwlmvm iwlwifi" fails on the
+# second name. Start must always succeed, or systemd never runs ExecStop on resume.
+ExecStart=/bin/sh -c 'for m in $HOLDERS$MODULE; do grep -q "^\$m " /proc/modules && /usr/sbin/rmmod \$m; done; exit 0'
 ExecStop=/usr/sbin/modprobe $MODULE
 
 [Install]
@@ -39,6 +42,7 @@ if [ -f /usr/lib/systemd/system-sleep/wifi-cycle ]; then
 fi
 
 systemctl daemon-reload
+systemctl reset-failed wifi-sleep-unload.service 2>/dev/null || true
 systemctl enable wifi-sleep-unload.service
 
 echo "==> Done. Test: suspend, resume, and WiFi should reconnect within a few seconds."
