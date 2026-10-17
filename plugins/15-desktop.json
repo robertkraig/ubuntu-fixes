@@ -2,13 +2,24 @@
   "name": "desktop",
   "description": "Desktop utilities & productivity",
   "packages": [
-    "flameshot", "gparted", "dropbox",
+    "flameshot",
+    "gparted",
+    "dropbox",
     "libimage-exiftool-perl",
-    "sane", "sane-utils", "simple-scan",
-    "img2pdf", "pdfarranger", "pdfsam", "pdftk-java", "ghostscript",
+    "sane",
+    "sane-utils",
+    "simple-scan",
+    "img2pdf",
+    "pdfarranger",
+    "pdfsam",
+    "pdftk-java",
+    "ghostscript",
     "leapp",
-    "thermald", "powertop", "lm-sensors", "fancontrol",
-    "firefox", "pipx",
-    "plasma-optimus", "nvidia-prime"
+    "thermald",
+    "powertop",
+    "lm-sensors",
+    "fancontrol",
+    "firefox",
+    "pipx"
   ]
 }

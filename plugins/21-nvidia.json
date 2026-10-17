@@ -1,0 +1,5 @@
+{
+  "name": "nvidia",
+  "description": "NVIDIA driver (ubuntu-drivers recommended) + PRIME tools, if an NVIDIA GPU is present",
+  "manual_script": "install-nvidia.sh"
+}
