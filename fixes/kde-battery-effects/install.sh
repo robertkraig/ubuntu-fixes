@@ -2,39 +2,34 @@
 set -e
 
 DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-rc=0; reason=$("$DIR/applies.sh") || rc=$?
+
+# Resolve the real user even when run under sudo ($HOME and whoami are root's here)
+REAL_USER="${SUDO_USER:-$USER}"
+REAL_HOME=$(getent passwd "$REAL_USER" | cut -d: -f6)
+BIN="$REAL_HOME/.local/bin"
+UNIT_DIR="$REAL_HOME/.config/systemd/user"
+
+rc=0; reason=$(sudo -u "$REAL_USER" HOME="$REAL_HOME" "$DIR/applies.sh") || rc=$?
 [ "$rc" -eq 1 ] && { echo "Skipping: $reason"; exit 0; }
 [ "$rc" -eq 2 ] && { echo "Already applied: $reason"; exit 0; }
 
-# Resolve real user even when run under sudo
-REAL_USER="${SUDO_USER:-$USER}"
-REAL_HOME=$(getent passwd "$REAL_USER" | cut -d: -f6)
+# systemctl --user for the real user, from root
+user_systemctl() { systemctl --machine="$REAL_USER@.host" --user "$@"; }
 
 echo "==> Installing KDE battery effects toggle for $REAL_USER..."
 
-# Install the main script
-install -Dm755 "$DIR/kde-power-effects.sh" "$REAL_HOME/.local/bin/kde-power-effects.sh"
-chown -R "$REAL_USER:" "$REAL_HOME/.local/bin/kde-power-effects.sh"
+install -Dm755 -o "$REAL_USER" -g "$REAL_USER" "$DIR/kde-power-effects.sh" "$BIN/kde-power-effects.sh"
 
 # Convenience wrappers for manual use
-cat > "$REAL_HOME/.local/bin/kde-battery-effects-off.sh" << EOF
-#!/bin/bash
-ON_AC=0 $REAL_HOME/.local/bin/kde-power-effects.sh
-EOF
+for mode in off:0 on:1; do
+    f="$BIN/kde-battery-effects-${mode%%:*}.sh"
+    printf '#!/bin/bash\nON_AC=%s %s/kde-power-effects.sh\n' "${mode##*:}" "$BIN" > "$f"
+    chmod 755 "$f"
+    chown "$REAL_USER:$REAL_USER" "$f"
+done
 
-cat > "$REAL_HOME/.local/bin/kde-battery-effects-on.sh" << EOF
-#!/bin/bash
-ON_AC=1 $REAL_HOME/.local/bin/kde-power-effects.sh
-EOF
-
-chmod +x "$REAL_HOME/.local/bin/kde-battery-effects-off.sh" \
-         "$REAL_HOME/.local/bin/kde-battery-effects-on.sh"
-chown "$REAL_USER:" "$REAL_HOME/.local/bin/kde-battery-effects-off.sh" \
-                    "$REAL_HOME/.local/bin/kde-battery-effects-on.sh"
-
-mkdir -p "$REAL_HOME/.config/systemd/user"
-chown -R "$REAL_USER:" "$REAL_HOME/.config/systemd"
-cat > "$REAL_HOME/.config/systemd/user/kde-power-effects.service" << EOF
+install -d -o "$REAL_USER" -g "$REAL_USER" "$UNIT_DIR"
+cat > "$UNIT_DIR/kde-power-effects.service" << EOF
 [Unit]
 Description=Apply KDE compositor effects based on power state
 After=plasma-kwin_wayland.service graphical-session.target
@@ -42,23 +37,22 @@ PartOf=graphical-session.target
 
 [Service]
 Type=oneshot
-ExecStart=$REAL_HOME/.local/bin/kde-power-effects.sh
+ExecStart=$BIN/kde-power-effects.sh
 RemainAfterExit=no
 
 [Install]
 WantedBy=graphical-session.target
 EOF
+chown "$REAL_USER:$REAL_USER" "$UNIT_DIR/kde-power-effects.service"
 
-# udev rule — fires on AC plug/unplug, runs script as the logged-in user
-sudo tee /etc/udev/rules.d/99-kde-power-effects.rules > /dev/null << EOF
-SUBSYSTEM=="power_supply", ATTR{online}=="0", RUN+="/usr/bin/systemd-run --user --machine=$(whoami)@ --no-ask-password -u kde-power-effects-udev $HOME/.local/bin/kde-power-effects.sh"
-SUBSYSTEM=="power_supply", ATTR{online}=="1", RUN+="/usr/bin/systemd-run --user --machine=$(whoami)@ --no-ask-password -u kde-power-effects-udev $HOME/.local/bin/kde-power-effects.sh"
+# udev rule — fires on charger plug/unplug, runs the script in the user's session
+cat > /etc/udev/rules.d/99-kde-power-effects.rules << EOF
+SUBSYSTEM=="power_supply", ATTR{type}=="Mains", ACTION=="change", RUN+="/usr/bin/systemd-run --user --machine=$REAL_USER@ --no-ask-password --collect $BIN/kde-power-effects.sh"
 EOF
-
 udevadm control --reload-rules
 
-sudo -u "$REAL_USER" systemctl --user daemon-reload
-sudo -u "$REAL_USER" systemctl --user enable --now kde-power-effects.service
+user_systemctl daemon-reload
+user_systemctl enable --now kde-power-effects.service
 
 echo ""
 echo "==> Done."

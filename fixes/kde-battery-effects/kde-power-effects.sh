@@ -1,26 +1,39 @@
 #!/bin/bash
-# Called by systemd user service on login and by udev on AC change.
-# Reads current power state and applies/removes KWin effects accordingly.
+# Called by the systemd user service on login and by udev (via systemd-run --user) on AC change.
+# On battery: remember which of EFFECTS are loaded, then unload them.
+# On AC: reload exactly the effects that were loaded before, so your KWin settings are kept.
+# Set ON_AC=0 or ON_AC=1 to force a state (used by the kde-battery-effects-off/on wrappers).
 
-DBUS_SESSION=$(cat /run/user/$(id -u)/dbus-session 2>/dev/null || \
-    grep -z DBUS_SESSION_BUS_ADDRESS /proc/$(pgrep -u "$USER" kwin_wayland | head -1)/environ 2>/dev/null | tr '\0' '\n' | grep DBUS_SESSION_BUS_ADDRESS | cut -d= -f2-)
+export DBUS_SESSION_BUS_ADDRESS="${DBUS_SESSION_BUS_ADDRESS:-unix:path=/run/user/$(id -u)/bus}"
 
-export DBUS_SESSION_BUS_ADDRESS="${DBUS_SESSION_BUS_ADDRESS:-$DBUS_SESSION}"
-
-ON_AC=$(cat /sys/class/power_supply/AC/online 2>/dev/null || \
-        cat /sys/class/power_supply/AC0/online 2>/dev/null || echo 1)
-
-kwin_effects() {
-    local action="$1"; shift
-    for effect in "$@"; do
-        qdbus6 org.kde.KWin /Effects "${action}Effect" "$effect" 2>/dev/null || true
-    done
-}
-
+STATE="${XDG_STATE_HOME:-$HOME/.local/state}/kde-power-effects.saved"
 EFFECTS=(wobblywindows scale squash translucency blur backgroundcontrast fadingpopups slide zoom kwin4_effect_magiclamp)
 
+# Charger name varies (AC, AC0, ADP1, ACAD), so find the "Mains" supply
+if [ -z "$ON_AC" ]; then
+    for ps in /sys/class/power_supply/*; do
+        [ "$(cat "$ps/type" 2>/dev/null)" = "Mains" ] && { ON_AC=$(cat "$ps/online"); break; }
+    done
+fi
+ON_AC=${ON_AC:-1}
+
+effect() { qdbus6 org.kde.KWin /Effects "$@" 2>/dev/null; }
+
 if [ "$ON_AC" = "1" ]; then
-    kwin_effects load "${EFFECTS[@]}"
+    [ -f "$STATE" ] || exit 0
+    while read -r e; do
+        [ -n "$e" ] && effect loadEffect "$e" >/dev/null
+    done < "$STATE"
+    rm -f "$STATE"
 else
-    kwin_effects unload "${EFFECTS[@]}"
+    mkdir -p "$(dirname "$STATE")"
+    # Keep anything already saved (e.g. unplugged twice without plugging in)
+    saved=$(cat "$STATE" 2>/dev/null)
+    for e in "${EFFECTS[@]}"; do
+        [ "$(effect isEffectLoaded "$e")" = "true" ] && saved+=$'\n'"$e"
+    done
+    echo "$saved" | sed '/^$/d' | sort -u > "$STATE"
+    while read -r e; do
+        effect unloadEffect "$e"
+    done < "$STATE"
 fi
