@@ -63,7 +63,7 @@ handle_repo() {
             gpg_url=$(echo "$plugin"    | jq -r '.repo.gpg_url')
             gpg_keyring=$(echo "$plugin" | jq -r '.repo.gpg_keyring')
             line=$(interpolate "$(echo "$plugin" | jq -r '.repo.line')")
-            curl -fsSL "$gpg_url" | gpg --dearmor -o "$gpg_keyring"
+            curl -fsSL "$gpg_url" | gpg --yes --dearmor -o "$gpg_keyring"
             echo "$line" > "$sources_file"
             ;;
         ppa)
@@ -78,7 +78,7 @@ handle_repo() {
             gpg_url=$(echo "$plugin"    | jq -r '.repo.gpg_url')
             gpg_keyring=$(echo "$plugin" | jq -r '.repo.gpg_keyring')
             line=$(interpolate "$(echo "$plugin" | jq -r '.repo.line')")
-            curl -fsSL "$gpg_url" | gpg --dearmor -o "$gpg_keyring"
+            curl -fsSL "$gpg_url" | gpg --yes --dearmor -o "$gpg_keyring"
             echo "$line" > "$sources_file"
             ;;
         script)
