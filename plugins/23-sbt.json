@@ -1,0 +1,12 @@
+{
+  "name": "sbt",
+  "description": "sbt — Scala build tool",
+  "repo": {
+    "type": "apt-key",
+    "gpg_url": "https://keyserver.ubuntu.com/pks/lookup?op=get&search=0x2EE0EA64E40A89B84B2DF73499E82A75642AC823",
+    "gpg_keyring": "/usr/share/keyrings/sbt.gpg",
+    "sources_file": "/etc/apt/sources.list.d/sbt.list",
+    "line": "deb [signed-by=/usr/share/keyrings/sbt.gpg] https://repo.scala-sbt.org/scalasbt/debian all main"
+  },
+  "packages": ["sbt"]
+}
