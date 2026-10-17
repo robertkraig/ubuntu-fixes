@@ -1,2 +1,5 @@
-- [herdr: run in a visible, named pane](herdr-type-dont-execute.md) — system commands go in a named herdr pane (split one if busy); I may press Enter, user types sudo password
-- [herdr: run scripts where I can watch](herdr-run-scripts-visibly.md) — on "run a script": check herdr is up, ask which pane or make a named one, ask user to connect first
+# Memory Index
+
+- [User Profile](user-profile.md) — Linux power user, Dell Precision 7560, KDE Plasma on Wayland
+- [System Setup](system-setup.md) — Ubuntu 26.04, TLP, NVIDIA Optimus, herdr terminal manager
+- [Herdr Pane Feedback](feedback-herdr-panes.md) — Create a new pane when the current one is busy; sudo is fine
