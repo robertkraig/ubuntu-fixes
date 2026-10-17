@@ -7,8 +7,13 @@ IFACE=$(basename "$(dirname "$(ls -d /sys/class/net/*/wireless 2>/dev/null | hea
 MODULE=$(basename "$(readlink -f "/sys/class/net/$IFACE/device/driver/module")")
 
 if systemctl is-enabled wifi-sleep-unload.service >/dev/null 2>&1; then
-    echo "already installed for $IFACE ($MODULE)"
-    exit 2
+    # Older installs used "modprobe -r", which fails and leaves WiFi off after resume
+    if systemctl cat wifi-sleep-unload.service 2>/dev/null | grep -q '^ExecStart=.*rmmod'; then
+        echo "already installed for $IFACE ($MODULE)"
+        exit 2
+    fi
+    echo "installed but outdated (modprobe -r version leaves WiFi off after resume), reinstall"
+    exit 0
 fi
 
 case "$MODULE" in
