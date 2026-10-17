@@ -1,0 +1,9 @@
+{
+  "name": "solaar",
+  "description": "Solaar + logiops — Logitech device manager",
+  "repo": {
+    "type": "ppa",
+    "ppa": "ppa:solaar-unifying/stable"
+  },
+  "packages": ["solaar", "logiops"]
+}

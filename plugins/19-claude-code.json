@@ -1,0 +1,5 @@
+{
+  "name": "claude-code",
+  "description": "Claude Code CLI (Anthropic)",
+  "manual_script": "install-claude-code.sh"
+}

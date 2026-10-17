@@ -1,0 +1,5 @@
+{
+  "name": "neovim",
+  "description": "Neovim (latest stable, manual install to /opt/nvim)",
+  "manual_script": "install-neovim.sh"
+}

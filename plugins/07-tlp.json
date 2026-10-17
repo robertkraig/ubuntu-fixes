@@ -1,0 +1,13 @@
+{
+  "name": "tlp",
+  "description": "TLP 1.10.2 battery management + Plasma UI integration",
+  "repo": {
+    "type": "ppa",
+    "ppa": "ppa:linrunner/tlp"
+  },
+  "packages": ["tlp", "tlp-rdw", "tlp-pd"],
+  "post_install": [
+    "systemctl enable tlp tlp-pd",
+    "systemctl start tlp tlp-pd"
+  ]
+}

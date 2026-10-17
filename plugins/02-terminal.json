@@ -1,0 +1,14 @@
+{
+  "name": "terminal",
+  "description": "Terminal tools & shell utilities",
+  "packages": [
+    "zsh", "tmux", "screen",
+    "foot", "foot-themes",
+    "bat", "fd-find", "ripgrep",
+    "eza", "lsd",
+    "git-delta", "glow", "sd", "duf", "gping", "ack",
+    "zoxide", "fzf",
+    "htop", "glances", "inxi", "psensor",
+    "vim"
+  ]
+}

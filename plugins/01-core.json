@@ -1,0 +1,11 @@
+{
+  "name": "core",
+  "description": "Core system utilities",
+  "packages": [
+    "curl", "wget", "gpg", "ca-certificates", "apt-transport-https",
+    "software-properties-common", "build-essential", "cmake", "make",
+    "autoconf", "pkg-config", "git", "jq", "yq", "pv", "gum", "zenity",
+    "net-tools", "unzip", "xz-utils", "gzip", "flatpak", "gdebi",
+    "lsb-release", "gnupg"
+  ]
+}

@@ -1,0 +1,5 @@
+{
+  "name": "zoom",
+  "description": "Zoom video conferencing",
+  "manual_script": "install-zoom.sh"
+}

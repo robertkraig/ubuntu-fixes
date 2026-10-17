@@ -1,0 +1,9 @@
+{
+  "name": "nodejs",
+  "description": "Node.js LTS via NodeSource",
+  "repo": {
+    "type": "script",
+    "script": "curl -fsSL https://deb.nodesource.com/setup_lts.x | bash -"
+  },
+  "packages": ["nodejs"]
+}

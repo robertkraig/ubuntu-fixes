@@ -1,0 +1,18 @@
+{
+  "name": "docker",
+  "description": "Docker CE container runtime",
+  "repo": {
+    "type": "apt-key",
+    "gpg_url": "https://download.docker.com/linux/ubuntu/gpg",
+    "gpg_keyring": "/usr/share/keyrings/docker.gpg",
+    "sources_file": "/etc/apt/sources.list.d/docker.list",
+    "line": "deb [arch=amd64 signed-by=/usr/share/keyrings/docker.gpg] https://download.docker.com/linux/ubuntu {{CODENAME}} stable"
+  },
+  "packages": [
+    "docker-ce", "docker-ce-cli", "containerd.io",
+    "docker-buildx-plugin", "docker-compose-plugin"
+  ],
+  "post_install": [
+    "systemctl disable docker docker.socket containerd"
+  ]
+}

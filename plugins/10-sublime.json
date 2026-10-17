@@ -1,0 +1,12 @@
+{
+  "name": "sublime",
+  "description": "Sublime Text + Sublime Merge",
+  "repo": {
+    "type": "apt-key",
+    "gpg_url": "https://download.sublimetext.com/sublimehq-pub.gpg",
+    "gpg_keyring": "/usr/share/keyrings/sublimehq.gpg",
+    "sources_file": "/etc/apt/sources.list.d/sublime-text.list",
+    "line": "deb [signed-by=/usr/share/keyrings/sublimehq.gpg] https://download.sublimetext.com/ apt/stable/"
+  },
+  "packages": ["sublime-text", "sublime-merge"]
+}

@@ -1,0 +1,12 @@
+{
+  "name": "spotify",
+  "description": "Spotify music client",
+  "repo": {
+    "type": "apt-key",
+    "gpg_url": "https://download.spotify.com/debian/pubkey_C85668DF69375001.gpg",
+    "gpg_keyring": "/usr/share/keyrings/spotify.gpg",
+    "sources_file": "/etc/apt/sources.list.d/spotify.list",
+    "line": "deb [signed-by=/usr/share/keyrings/spotify.gpg] http://repository.spotify.com stable non-free"
+  },
+  "packages": ["spotify-client"]
+}

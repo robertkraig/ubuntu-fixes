@@ -1,0 +1,12 @@
+{
+  "name": "vscode",
+  "description": "Visual Studio Code",
+  "repo": {
+    "type": "apt-key",
+    "gpg_url": "https://packages.microsoft.com/keys/microsoft.asc",
+    "gpg_keyring": "/usr/share/keyrings/microsoft.gpg",
+    "sources_file": "/etc/apt/sources.list.d/vscode.list",
+    "line": "deb [arch=amd64 signed-by=/usr/share/keyrings/microsoft.gpg] https://packages.microsoft.com/repos/code stable main"
+  },
+  "packages": ["code"]
+}

@@ -1,0 +1,12 @@
+{
+  "name": "signal",
+  "description": "Signal Desktop messenger",
+  "repo": {
+    "type": "apt-key",
+    "gpg_url": "https://updates.signal.org/desktop/apt/keys.asc",
+    "gpg_keyring": "/usr/share/keyrings/signal.gpg",
+    "sources_file": "/etc/apt/sources.list.d/signal.list",
+    "line": "deb [arch=amd64 signed-by=/usr/share/keyrings/signal.gpg] https://updates.signal.org/desktop/apt xenial main"
+  },
+  "packages": ["signal-desktop"]
+}

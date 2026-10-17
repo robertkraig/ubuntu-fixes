@@ -1,0 +1,12 @@
+{
+  "name": "chrome",
+  "description": "Google Chrome browser",
+  "repo": {
+    "type": "apt-key",
+    "gpg_url": "https://dl.google.com/linux/linux_signing_key.pub",
+    "gpg_keyring": "/usr/share/keyrings/google-chrome.gpg",
+    "sources_file": "/etc/apt/sources.list.d/google-chrome.list",
+    "line": "deb [arch=amd64 signed-by=/usr/share/keyrings/google-chrome.gpg] http://dl.google.com/linux/chrome/deb/ stable main"
+  },
+  "packages": ["google-chrome-stable"]
+}

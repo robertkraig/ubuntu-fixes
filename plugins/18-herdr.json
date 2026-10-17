@@ -1,0 +1,5 @@
+{
+  "name": "herdr",
+  "description": "herdr terminal workspace manager",
+  "manual_script": "install-herdr.sh"
+}

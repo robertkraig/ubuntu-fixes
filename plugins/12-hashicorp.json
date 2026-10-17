@@ -1,0 +1,12 @@
+{
+  "name": "hashicorp",
+  "description": "HashiCorp tools (Terraform)",
+  "repo": {
+    "type": "apt-key",
+    "gpg_url": "https://apt.releases.hashicorp.com/gpg",
+    "gpg_keyring": "/usr/share/keyrings/hashicorp.gpg",
+    "sources_file": "/etc/apt/sources.list.d/hashicorp.list",
+    "line": "deb [signed-by=/usr/share/keyrings/hashicorp.gpg] https://apt.releases.hashicorp.com {{CODENAME}} main"
+  },
+  "packages": ["terraform"]
+}

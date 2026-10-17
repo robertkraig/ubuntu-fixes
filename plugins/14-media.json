@@ -1,0 +1,8 @@
+{
+  "name": "media",
+  "description": "Media players & audio tools",
+  "packages": [
+    "vlc", "mpv", "audacious",
+    "easyeffects", "calf-plugins"
+  ]
+}
