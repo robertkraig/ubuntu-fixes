@@ -1,0 +1,5 @@
+{
+  "name": "leapp",
+  "description": "Leapp — cloud credentials manager (Noovolari)",
+  "manual_script": "install-leapp.sh"
+}
