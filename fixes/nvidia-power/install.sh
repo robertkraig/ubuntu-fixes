@@ -1,6 +1,10 @@
 #!/bin/bash
 set -e
 
+DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+rc=0; reason=$("$DIR/applies.sh") || rc=$?
+[ "$rc" -eq 1 ] && { echo "Skipping: $reason"; exit 0; }
+
 echo "==> Copying NVIDIA modprobe config..."
 cp nvidia-graphics-drivers-kms.conf /etc/modprobe.d/nvidia-graphics-drivers-kms.conf
 

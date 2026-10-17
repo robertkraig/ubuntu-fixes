@@ -2,10 +2,13 @@
 # fixes.sh — Walk through fixes/*/ and run each install.sh, asking first.
 # Usage: ./fixes.sh [--list]
 # Run as your regular user; sudo is used per fix when needed.
+#
+# Each fix may have an applies.sh that checks the hardware/software it targets:
+#   exit 0 = applies, 1 = not applicable, 2 = already applied (prints the reason)
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 FIXES_DIR="$SCRIPT_DIR/fixes"
-MACHINE=$(cat /sys/class/dmi/id/product_name 2>/dev/null)
+MIN_UBUNTU="26.04"
 
 # ─── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -15,6 +18,11 @@ warn()    { echo -e "\e[33m  !\e[0m $*"; }
 die()     { echo -e "\e[31mERROR:\e[0m $*"; exit 1; }
 
 [ "$EUID" -ne 0 ] || die "Run as your regular user, not with sudo. Each fix asks for sudo if it needs it."
+
+. /etc/os-release
+[ "$ID" = "ubuntu" ] || die "These fixes are for Ubuntu (found: $PRETTY_NAME)."
+dpkg --compare-versions "$VERSION_ID" ge "$MIN_UBUNTU" \
+    || die "These fixes need Ubuntu $MIN_UBUNTU or newer (found: $VERSION_ID)."
 
 # Title from the README's first heading, minus the "Fix: " prefix
 fix_title() {
@@ -26,30 +34,32 @@ runs_as_user() {
     grep -q '^# Run as your regular user' "$1/install.sh"
 }
 
-# Optional fixes/<fix>/machines: one DMI product name per line
-machine_ok() {
-    [ -f "$1/machines" ] || return 0
-    grep -qxF "$MACHINE" "$1/machines"
+# Sets APPLIES (0/1/2) and REASON from the fix's applies.sh; no applies.sh = applies
+check_applies() {
+    APPLIES=0; REASON="no applies.sh, assuming it applies"
+    [ -f "$1/applies.sh" ] || return
+    REASON=$(bash "$1/applies.sh" 2>&1) || APPLIES=$?
+    [ "$APPLIES" -gt 2 ] && APPLIES=1
 }
 
 # ─── List mode ────────────────────────────────────────────────────────────────
 
 if [ "$1" = "--list" ]; then
-    echo "Machine: $MACHINE"
+    info "$PRETTY_NAME, $(uname -m), checking fixes..."
     for dir in "$FIXES_DIR"/*/; do
         dir=${dir%/}
         [ -f "$dir/install.sh" ] || continue
-        mark="✓"; machine_ok "$dir" || mark="✗"
-        who="sudo"; runs_as_user "$dir" && who="user"
-        printf "  %s %-26s [%s] %s\n" "$mark" "$(basename "$dir")" "$who" "$(fix_title "$dir")"
+        check_applies "$dir"
+        case $APPLIES in 0) mark="→";; 1) mark="✗";; 2) mark="✓";; esac
+        printf "  %s %-24s %s\n" "$mark" "$(basename "$dir")" "$REASON"
     done
-    echo "  ✗ = not listed for this machine in its 'machines' file"
+    echo "  → applies   ✓ already applied   ✗ not applicable"
     exit 0
 fi
 
 # ─── Run ──────────────────────────────────────────────────────────────────────
 
-info "Machine: $MACHINE"
+info "$PRETTY_NAME, $(uname -m)"
 ran=(); skipped=(); failed=()
 
 for dir in "$FIXES_DIR"/*/; do
@@ -60,11 +70,12 @@ for dir in "$FIXES_DIR"/*/; do
     echo
     info "$name — $(fix_title "$dir")"
 
-    default="y"
-    if ! machine_ok "$dir"; then
-        warn "Written for: $(paste -sd, "$dir/machines"). This is: $MACHINE"
-        default="n"
-    fi
+    check_applies "$dir"
+    case $APPLIES in
+        0) echo "    applies: $REASON"; default="y" ;;
+        1) warn "not applicable: $REASON"; default="n" ;;
+        2) success "already applied: $REASON"; default="n" ;;
+    esac
     runs_as_user "$dir" && echo "    runs as: $USER" || echo "    runs as: root (sudo)"
 
     while true; do

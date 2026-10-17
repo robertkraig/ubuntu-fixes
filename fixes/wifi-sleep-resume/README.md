@@ -1,15 +1,27 @@
-# Fix: Intel WiFi Driver Stuck State After Suspend/Resume
+# Fix: Intel WiFi Hangs the Desktop After Suspend/Resume
 
 ## Problem
 
-On Intel WiFi adapters (particularly AX series), the driver can enter a stuck
-state after resuming from suspend when on battery. The adapter shows as up but
-cannot connect, requiring a manual `ip link set wlp... down/up` or reboot to recover.
+Intel WiFi cards (`iwlwifi`, e.g. AX201/AX210) can fail to come back from
+S3 suspend: register reads return `0xffffffff`, then the firmware fails to
+start (`Failed to start RT ucode: -110`).
+
+NetworkManager gets stuck in the kernel trying to bring the card up while
+holding the global network lock (rtnl). Everything that touches networking
+then blocks behind it — the Plasma network applet, plasmashell, browsers —
+so the desktop stops responding, WiFi can't be re-enabled, and logging out
+doesn't help. Only a reboot recovers.
+
+Seen on both AC and battery, and the card sometimes recovers on one resume
+and not the next.
 
 ## Fix
 
-A systemd sleep hook that brings the WiFi interface down before sleep and back
-up on resume — but only when on battery (no disruption when on AC).
+A systemd service tied to `sleep.target` that unloads the WiFi driver (and
+the modules that depend on it, e.g. `iwlmvm`) before sleep and loads it again
+on resume, so the card always initialises from scratch.
+
+The driver and its dependents are detected at install time.
 
 ## Install
 
@@ -17,18 +29,23 @@ up on resume — but only when on battery (no disruption when on AC).
 sudo ./install.sh
 ```
 
-Edit `wifi-cycle` first if your WiFi interface name differs from `wlp147s0f0`:
+No reboot required. Replaces the older `wifi-cycle` interface down/up hook if present.
+
+## Verify
+
+Suspend, resume, and check:
 ```bash
-ip link show | grep -E "wlan|wlp"
+journalctl -b -k | grep -iE 'iwlwifi.*(error|fail|timeout)'
 ```
 
-No reboot required.
+## Uninstall
+
+```bash
+sudo systemctl disable wifi-sleep-unload.service
+sudo rm /etc/systemd/system/wifi-sleep-unload.service
+```
 
 ## Files
 
-- `wifi-cycle` — systemd sleep hook, goes in `/usr/lib/systemd/system-sleep/`
-
-## Affected hardware
-
-- Dell Precision 7510, 7560 (Intel AX201/AX210 WiFi)
-- Various Intel 11th/12th gen laptops with AX series WiFi
+- `install.sh` — detects the driver and installs `wifi-sleep-unload.service`
+- `applies.sh` — used by `fixes.sh` to decide whether this fix applies

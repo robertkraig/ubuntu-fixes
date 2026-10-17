@@ -1,22 +1,44 @@
 #!/bin/bash
 set -e
 
-# Detect WiFi interface automatically
-IFACE=$(ip link show | grep -E "wlp|wlan" | grep -v "p2p" | awk -F': ' '{print $2}' | head -1)
+SERVICE="/etc/systemd/system/wifi-sleep-unload.service"
 
-if [ -z "$IFACE" ]; then
-    echo "ERROR: Could not detect WiFi interface. Edit wifi-cycle manually and set IFACE."
-    exit 1
+# Wireless interface -> its kernel driver module -> modules that depend on it
+IFACE=$(basename "$(dirname "$(ls -d /sys/class/net/*/wireless 2>/dev/null | head -1)")")
+[ -n "$IFACE" ] && [ "$IFACE" != "." ] || { echo "ERROR: No wireless interface found."; exit 1; }
+
+MODULE=$(basename "$(readlink -f "/sys/class/net/$IFACE/device/driver/module")")
+HOLDERS=""
+for h in /sys/module/"$MODULE"/holders/*; do
+    [ -e "$h" ] && HOLDERS+="$(basename "$h") "
+done
+
+echo "==> WiFi: $IFACE, driver $MODULE${HOLDERS:+ (used by: $HOLDERS)}"
+
+cat > "$SERVICE" <<EOF
+[Unit]
+Description=Unload $MODULE before sleep, reload after resume (WiFi resume hang workaround)
+Before=sleep.target
+StopWhenUnneeded=yes
+
+[Service]
+Type=oneshot
+RemainAfterExit=yes
+ExecStart=/usr/sbin/modprobe -r $HOLDERS$MODULE
+ExecStop=/usr/sbin/modprobe $MODULE
+
+[Install]
+WantedBy=sleep.target
+EOF
+echo "==> Installed $SERVICE"
+
+# Older version of this fix: an interface down/up hook, battery only
+if [ -f /usr/lib/systemd/system-sleep/wifi-cycle ]; then
+    rm /usr/lib/systemd/system-sleep/wifi-cycle
+    echo "==> Removed old /usr/lib/systemd/system-sleep/wifi-cycle hook"
 fi
 
-echo "==> Detected WiFi interface: $IFACE"
+systemctl daemon-reload
+systemctl enable wifi-sleep-unload.service
 
-# Update interface name in the script
-sed "s/IFACE=\"wlp147s0f0\"/IFACE=\"$IFACE\"/" wifi-cycle > /tmp/wifi-cycle-patched
-
-echo "==> Installing sleep hook to /usr/lib/systemd/system-sleep/wifi-cycle..."
-cp /tmp/wifi-cycle-patched /usr/lib/systemd/system-sleep/wifi-cycle
-chmod +x /usr/lib/systemd/system-sleep/wifi-cycle
-
-echo "==> Done. No reboot required."
-echo "    Hook will cycle $IFACE on suspend/resume when on battery."
+echo "==> Done. Test: suspend, resume, and WiFi should reconnect within a few seconds."
