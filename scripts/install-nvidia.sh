@@ -5,8 +5,9 @@
 
 lspci -nn | grep -E 'VGA|3D|Display' | grep -qi nvidia || { echo "  No NVIDIA GPU, skipping"; exit 0; }
 
+# e.g. nvidia-driver-580 (Quadro M2000M, Maxwell) or nvidia-driver-5xx-open (RTX A2000, Ampere)
 DRIVER=$(ubuntu-drivers devices 2>/dev/null \
-    | awk '/^driver *: nvidia-driver-[0-9]+ .*recommended/ {print $3; exit}')
+    | awk '/^driver *: nvidia-driver-[0-9]+(-open)? .*recommended/ {print $3; exit}')
 
 if [ -z "$DRIVER" ]; then
     echo "  WARNING: ubuntu-drivers has no recommended NVIDIA driver for this GPU"
