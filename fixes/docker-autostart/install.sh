@@ -1,4 +1,5 @@
 #!/bin/bash
+# Run as your regular user, not root (edits your shell rc, uses sudo itself).
 set -e
 
 SHELL_RC=""

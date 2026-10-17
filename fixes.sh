@@ -1,0 +1,99 @@
+#!/bin/bash
+# fixes.sh — Walk through fixes/*/ and run each install.sh, asking first.
+# Usage: ./fixes.sh [--list]
+# Run as your regular user; sudo is used per fix when needed.
+
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+FIXES_DIR="$SCRIPT_DIR/fixes"
+MACHINE=$(cat /sys/class/dmi/id/product_name 2>/dev/null)
+
+# ─── Helpers ──────────────────────────────────────────────────────────────────
+
+info()    { echo -e "\e[34m==>\e[0m $*"; }
+success() { echo -e "\e[32m ✓\e[0m $*"; }
+warn()    { echo -e "\e[33m  !\e[0m $*"; }
+die()     { echo -e "\e[31mERROR:\e[0m $*"; exit 1; }
+
+[ "$EUID" -ne 0 ] || die "Run as your regular user, not with sudo. Each fix asks for sudo if it needs it."
+
+# Title from the README's first heading, minus the "Fix: " prefix
+fix_title() {
+    head -1 "$1/README.md" 2>/dev/null | sed -e 's/^# *//' -e 's/^Fix: *//'
+}
+
+# Fixes marked "# Run as your regular user" (they edit $HOME or call sudo themselves)
+runs_as_user() {
+    grep -q '^# Run as your regular user' "$1/install.sh"
+}
+
+# Optional fixes/<fix>/machines: one DMI product name per line
+machine_ok() {
+    [ -f "$1/machines" ] || return 0
+    grep -qxF "$MACHINE" "$1/machines"
+}
+
+# ─── List mode ────────────────────────────────────────────────────────────────
+
+if [ "$1" = "--list" ]; then
+    echo "Machine: $MACHINE"
+    for dir in "$FIXES_DIR"/*/; do
+        dir=${dir%/}
+        [ -f "$dir/install.sh" ] || continue
+        mark="✓"; machine_ok "$dir" || mark="✗"
+        who="sudo"; runs_as_user "$dir" && who="user"
+        printf "  %s %-26s [%s] %s\n" "$mark" "$(basename "$dir")" "$who" "$(fix_title "$dir")"
+    done
+    echo "  ✗ = not listed for this machine in its 'machines' file"
+    exit 0
+fi
+
+# ─── Run ──────────────────────────────────────────────────────────────────────
+
+info "Machine: $MACHINE"
+ran=(); skipped=(); failed=()
+
+for dir in "$FIXES_DIR"/*/; do
+    dir=${dir%/}
+    name=$(basename "$dir")
+    [ -f "$dir/install.sh" ] || continue
+
+    echo
+    info "$name — $(fix_title "$dir")"
+
+    default="y"
+    if ! machine_ok "$dir"; then
+        warn "Written for: $(paste -sd, "$dir/machines"). This is: $MACHINE"
+        default="n"
+    fi
+    runs_as_user "$dir" && echo "    runs as: $USER" || echo "    runs as: root (sudo)"
+
+    while true; do
+        if [ "$default" = "y" ]; then prompt="[Y/n/r=readme/q=quit]"; else prompt="[y/N/r=readme/q=quit]"; fi
+        read -rp "    Run this fix? $prompt " answer
+        answer=${answer:-$default}
+        case "${answer,,}" in
+            y|yes)
+                if runs_as_user "$dir"; then
+                    (cd "$dir" && bash ./install.sh)
+                else
+                    (cd "$dir" && sudo bash ./install.sh)
+                fi
+                if [ $? -eq 0 ]; then success "$name"; ran+=("$name")
+                else warn "$name failed"; failed+=("$name"); fi
+                break ;;
+            n|no) skipped+=("$name"); break ;;
+            r|readme) ${PAGER:-less} "$dir/README.md" ;;
+            q|quit) break 2 ;;
+            *) echo "    Please answer y, n, r or q." ;;
+        esac
+    done
+done
+
+# ─── Summary ──────────────────────────────────────────────────────────────────
+
+echo
+info "Summary"
+[ ${#ran[@]} -gt 0 ]     && success "ran:     ${ran[*]}"
+[ ${#skipped[@]} -gt 0 ] && echo "    skipped: ${skipped[*]}"
+[ ${#failed[@]} -gt 0 ]  && warn "failed:  ${failed[*]}"
+[ ${#failed[@]} -eq 0 ]

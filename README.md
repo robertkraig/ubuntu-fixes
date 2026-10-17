@@ -4,6 +4,17 @@ A collection of fixes and tuning applied to a Dell Precision 7560 running Ubuntu
 
 Each fix lives in its own folder under `fixes/` with a README and an `install.sh`.
 
+Run them interactively (as your regular user — it asks before each fix and uses sudo where needed):
+
+```bash
+./fixes.sh --list   # preview what applies to this machine
+./fixes.sh          # y/n/r(eadme)/q per fix
+```
+
+A fix can include a `machines` file (one DMI product name per line, from
+`/sys/class/dmi/id/product_name`). On other machines `fixes.sh` warns and defaults to No.
+Mark an `install.sh` with `# Run as your regular user` on line 2 if it must not run as root.
+
 ## Hardware
 - **Machine:** Dell Precision 7560
 - **CPU:** Intel i7-11850H
