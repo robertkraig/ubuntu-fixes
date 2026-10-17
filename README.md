@@ -21,6 +21,7 @@ Each fix lives in its own folder under `fixes/` with a README and an `install.sh
 | `fixes/wifi-sleep-resume` | Intel WiFi driver stuck state after suspend/resume on battery |
 | `fixes/powerdevil-tlp-ordering` | Plasma battery widget not showing TLP power profile controls |
 | `fixes/docker-autostart` | Docker + containers (e.g. Airflow) silently running at boot |
+| `fixes/claude-memory` | Claude Code memories for my home dir (herdr workflow preferences) |
 
 ## Results
 

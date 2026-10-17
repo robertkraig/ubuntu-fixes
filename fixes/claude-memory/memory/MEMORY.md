@@ -1,0 +1,2 @@
+- [herdr: run in a visible, named pane](herdr-type-dont-execute.md) — system commands go in a named herdr pane (split one if busy); I may press Enter, user types sudo password
+- [herdr: run scripts where I can watch](herdr-run-scripts-visibly.md) — on "run a script": check herdr is up, ask which pane or make a named one, ask user to connect first
