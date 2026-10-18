@@ -1,2 +1,2 @@
-SUBSYSTEM=="button", KERNEL=="LID0", ACTION=="change", ATTR{state}=="closed", RUN+="/usr/sbin/tlp bat"
-SUBSYSTEM=="button", KERNEL=="LID0", ACTION=="change", ATTR{state}=="open", RUN+="/usr/sbin/tlp ac"
+SUBSYSTEM=="button", KERNEL=="LID0", ACTION=="change", ATTR{state}=="closed", RUN+="/usr/local/bin/lid-closed"
+SUBSYSTEM=="button", KERNEL=="LID0", ACTION=="change", ATTR{state}=="open",   RUN+="/usr/local/bin/lid-open"

@@ -1,9 +1,23 @@
 #!/bin/bash
-# Exit 0 = applies, 1 = not applicable, 2 = already applied. Prints the reason.
+# Exit 0 = applies/needs update, 1 = not applicable, 2 = already applied.
+
+source "$(dirname "${BASH_SOURCE[0]}")/../../lib/deploy.sh"
 
 ls /proc/acpi/button/lid/*/state >/dev/null 2>&1 || { echo "no laptop lid"; exit 1; }
 command -v tlp >/dev/null || { echo "needs TLP (run tlp-battery first)"; exit 1; }
-[ -f /etc/udev/rules.d/99-lid-tlp.rules ] && { echo "already installed"; exit 2; }
 
-echo "laptop lid + TLP"
+DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+
+stale=()
+file_current "$DIR/lid-closed.sh"    /usr/local/bin/lid-closed    || stale+=("lid-closed")
+file_current "$DIR/lid-open.sh"      /usr/local/bin/lid-open      || stale+=("lid-open")
+file_current "$DIR/99-lid-tlp.rules" /etc/udev/rules.d/99-lid-tlp.rules || stale+=("udev-rule")
+
+if [ ${#stale[@]} -eq 0 ]; then
+    echo "already installed"
+    exit 2
+fi
+
+[ -f /etc/udev/rules.d/99-lid-tlp.rules ] && echo "installed but stale: ${stale[*]}" || \
+    echo "laptop lid + TLP"
 exit 0
