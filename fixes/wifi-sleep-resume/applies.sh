@@ -1,22 +1,28 @@
 #!/bin/bash
-# Exit 0 = applies, 1 = not applicable, 2 = already applied. Prints the reason.
+# Exit 0 = applies/needs update, 1 = not applicable, 2 = already applied.
 
-IFACE=$(basename "$(dirname "$(ls -d /sys/class/net/*/wireless 2>/dev/null | head -1)")")
-[ -n "$IFACE" ] && [ "$IFACE" != "." ] || { echo "no wireless interface"; exit 1; }
+source "$(dirname "${BASH_SOURCE[0]}")/../../lib/deploy.sh"
 
-MODULE=$(basename "$(readlink -f "/sys/class/net/$IFACE/device/driver/module")")
+IFACE=$(basename "$(dirname "$(ls -d /sys/class/net/*/wireless 2>/dev/null | head -1)")" 2>/dev/null)
+[ -n "$IFACE" ] && [ "$IFACE" != "." ] || { echo "no wireless interface found"; exit 1; }
 
-if systemctl is-enabled wifi-sleep-unload.service >/dev/null 2>&1; then
-    # Older installs used "modprobe -r", which fails and leaves WiFi off after resume
-    if systemctl cat wifi-sleep-unload.service 2>/dev/null | grep -q '^ExecStart=.*rmmod'; then
-        echo "already installed for $IFACE ($MODULE)"
-        exit 2
-    fi
-    echo "installed but outdated (modprobe -r version leaves WiFi off after resume), reinstall"
-    exit 0
+MODULE=$(basename "$(readlink -f "/sys/class/net/$IFACE/device/driver/module")" 2>/dev/null)
+[ -n "$MODULE" ] || { echo "could not determine WiFi kernel module"; exit 1; }
+
+HOLDERS=""
+for h in /sys/module/"$MODULE"/holders/*; do
+    [ -e "$h" ] && HOLDERS+="$(basename "$h") "
+done
+
+DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+DST="/etc/systemd/system/wifi-sleep-unload.service"
+
+if deployed_and_current "$DIR/wifi-sleep-unload.service" "$DST" \
+    "MODULE=$MODULE" "HOLDERS=$HOLDERS"; then
+    echo "already applied: service current for $IFACE ($MODULE)"
+    exit 2
 fi
 
-case "$MODULE" in
-    iwlwifi) echo "Intel WiFi ($IFACE, iwlwifi): known resume hang on AX2xx/AX1xx"; exit 0 ;;
-    *)       echo "WiFi driver $MODULE is not known to be affected (iwlwifi is)"; exit 1 ;;
-esac
+[ -f "$DST" ] && echo "installed but stale — service file changed, will update" || \
+    echo "WiFi interface $IFACE ($MODULE), service not installed"
+exit 0

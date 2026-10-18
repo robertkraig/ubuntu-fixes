@@ -1,0 +1,12 @@
+[Unit]
+Description=Apply KDE compositor effects based on power state
+After=plasma-kwin_wayland.service graphical-session.target
+PartOf=graphical-session.target
+
+[Service]
+Type=oneshot
+ExecStart=__BIN__/kde-power-effects.sh
+RemainAfterExit=no
+
+[Install]
+WantedBy=graphical-session.target

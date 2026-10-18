@@ -1,0 +1,1 @@
+SUBSYSTEM=="power_supply", ATTR{type}=="Mains", ACTION=="change", RUN+="/usr/bin/systemd-run --user --machine=__USER__@ --no-ask-password --collect __BIN__/kde-power-effects.sh"
