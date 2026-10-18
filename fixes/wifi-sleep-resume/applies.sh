@@ -17,12 +17,20 @@ done
 DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 DST="/etc/systemd/system/wifi-sleep-unload.service"
 
-if deployed_and_current "$DIR/wifi-sleep-unload.service" "$DST" \
-    "MODULE=$MODULE" "HOLDERS=$HOLDERS"; then
+service_current=false
+wifiup_current=false
+deployed_and_current "$DIR/wifi-sleep-unload.service" "$DST" \
+    "MODULE=$MODULE" "HOLDERS=$HOLDERS" && service_current=true
+file_current "$DIR/wifi-up.sh" "/usr/local/bin/wifi-up" && wifiup_current=true
+
+if $service_current && $wifiup_current; then
     echo "already applied: service current for $IFACE ($MODULE)"
     exit 2
 fi
 
-[ -f "$DST" ] && echo "installed but stale — service file changed, will update" || \
-    echo "WiFi interface $IFACE ($MODULE), service not installed"
+stale=()
+$service_current || stale+=("service")
+$wifiup_current  || stale+=("wifi-up")
+[ -f "$DST" ] && echo "installed but stale: ${stale[*]} — will update" || \
+    echo "WiFi interface $IFACE ($MODULE), not installed"
 exit 0
