@@ -44,14 +44,26 @@ Suspend, resume, and check:
 journalctl -b -k | grep -iE 'iwlwifi.*(error|fail|timeout)'
 ```
 
+## WiFi still off after resume?
+
+```bash
+wifi-up            # installed by install.sh, or: sudo ./wifi-up.sh from this folder
+```
+
+Loads the driver again (unloading it first if it's loaded but has no interface),
+clears the service's failed state, unblocks rfkill and turns the NetworkManager
+radio on. It finds the driver from the installed service or `lspci`, since the
+interface doesn't exist while the driver is unloaded.
+
 ## Uninstall
 
 ```bash
 sudo systemctl disable wifi-sleep-unload.service
-sudo rm /etc/systemd/system/wifi-sleep-unload.service
+sudo rm /etc/systemd/system/wifi-sleep-unload.service /usr/local/bin/wifi-up
 ```
 
 ## Files
 
 - `install.sh` — detects the driver and installs `wifi-sleep-unload.service`
+- `wifi-up.sh` — manual recovery, installed as `/usr/local/bin/wifi-up`
 - `applies.sh` — used by `fixes.sh` to decide whether this fix applies

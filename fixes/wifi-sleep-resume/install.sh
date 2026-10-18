@@ -1,6 +1,7 @@
 #!/bin/bash
 set -e
 
+DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 SERVICE="/etc/systemd/system/wifi-sleep-unload.service"
 
 # Wireless interface -> its kernel driver module -> modules that depend on it
@@ -40,6 +41,10 @@ if [ -f /usr/lib/systemd/system-sleep/wifi-cycle ]; then
     rm /usr/lib/systemd/system-sleep/wifi-cycle
     echo "==> Removed old /usr/lib/systemd/system-sleep/wifi-cycle hook"
 fi
+
+# Manual recovery command, in case WiFi is ever still off after resume
+install -m 755 "$DIR/wifi-up.sh" /usr/local/bin/wifi-up
+echo "==> Installed /usr/local/bin/wifi-up (run it if WiFi is ever off after resume)"
 
 systemctl daemon-reload
 systemctl reset-failed wifi-sleep-unload.service 2>/dev/null || true
