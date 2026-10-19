@@ -6,11 +6,9 @@
 
 SERVICE=wifi-sleep-unload.service
 
-# Module detection: ExecStart lists modules as "for m in <holders> <module>; do ..."
-# Take the last name in that list — that's the main driver (e.g. iwlwifi).
+# Module detection: read from the service Description line ("Unload iwlwifi before sleep ...")
 MODULE=$(systemctl cat "$SERVICE" 2>/dev/null \
-    | sed -n "s|.*for m in \(.*\); do.*|\1|p" \
-    | awk '{print $NF}')
+    | sed -n 's/^Description=Unload \([^ ]*\) before.*/\1/p')
 if [ -z "$MODULE" ]; then
     WDIR=$(ls -d /sys/class/net/*/wireless 2>/dev/null | head -1)
     [ -n "$WDIR" ] && MODULE=$(basename "$(readlink -f "$(dirname "$WDIR")/device/driver/module")")
