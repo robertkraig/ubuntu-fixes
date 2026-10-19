@@ -76,7 +76,21 @@ for _ in $(seq 10); do
 done
 
 if [ -z "$WDIR" ]; then
-    echo "ERROR: no WiFi interface after loading $MODULE. Check: journalctl -b -k | grep -i ${MODULE%%_*}"
+    LOG=/home/rkraig/ubuntu-fixes/wifi-up-failure.txt
+    {
+        echo "=== wifi-up failure $(date) ==="
+        echo "--- kernel wifi/pci messages ---"
+        journalctl -b -k | grep -i -E 'iwlwifi|iwlmld|HW_REV|PCI issues' | tail -40
+        echo "--- service status ---"
+        systemctl status "$SERVICE" --no-pager 2>&1
+        echo "--- rfkill ---"
+        rfkill list 2>&1
+        echo "--- lspci ---"
+        lspci -k | grep -A3 -i 'network controller' 2>&1
+    } > "$LOG" 2>&1
+    chown rkraig:rkraig "$LOG" 2>/dev/null || true
+    echo "ERROR: no WiFi interface after loading $MODULE."
+    echo "       Logs saved to $LOG — show that file to Claude."
     exit 1
 fi
 
