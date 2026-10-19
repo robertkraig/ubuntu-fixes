@@ -19,9 +19,11 @@ if [ -z "$MODULE" ]; then
 fi
 [ -n "$MODULE" ] || { echo "ERROR: can't tell which WiFi driver to load."; exit 1; }
 
-# PCI address for this card — needed for bus reset
-PCI_ADDR=$(lspci -k | grep -B1 "Kernel modules:.*${MODULE%%_*}" \
-    | grep -oP '[0-9a-f]{4}:[0-9a-f]{2}:[0-9a-f]{2}\.[0-9a-f]' | head -1)
+# PCI address for this card — use lspci -Dk which always shows the device
+# even when the driver failed to bind (PCI wedge state). -B3 reaches back
+# to the address line from "Kernel modules:".
+PCI_ADDR=$(lspci -Dk 2>/dev/null | grep -B3 "Kernel modules:.*${MODULE%%_*}" \
+    | grep -oP '^[0-9a-f]{4}:[0-9a-f]{2}:[0-9a-f]{2}\.[0-9a-f]+' | head -1)
 
 unload_module() {
     for h in /sys/module/"$MODULE"/holders/*; do
