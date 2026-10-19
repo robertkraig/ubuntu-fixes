@@ -10,7 +10,7 @@ RemainAfterExit=yes
 # remove rule that unloads holders itself, causing modprobe -r to fail on the second name.
 # ExecStart must exit 0 or systemd skips ExecStop on resume, leaving the module unloaded.
 ExecStart=/bin/sh -c 'for m in __HOLDERS____MODULE__; do grep -q "^$m " /proc/modules && /usr/sbin/rmmod $m; done; sleep 1; exit 0'
-ExecStop=/usr/sbin/modprobe __MODULE__
+ExecStop=/usr/local/bin/wifi-up
 
 [Install]
 WantedBy=sleep.target
