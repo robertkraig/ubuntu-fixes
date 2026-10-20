@@ -12,8 +12,12 @@ echo "==> Installing lid close power scripts..."
 deploy_file "$DIR/lid-closed.sh" /usr/local/bin/lid-closed "" 755
 deploy_file "$DIR/lid-open.sh"   /usr/local/bin/lid-open   "" 755
 
-echo "==> Installing udev rule..."
-deploy_file "$DIR/99-lid-tlp.rules" /etc/udev/rules.d/99-lid-tlp.rules "" 644
-udevadm control --reload-rules
+echo "==> Installing acpid event handler..."
+if ! command -v acpid >/dev/null 2>&1; then
+    apt-get install -y acpid
+fi
+deploy_file "$DIR/acpi-lid.event" /etc/acpi/events/lid-close-power "" 644
+deploy_file "$DIR/acpi-lid.sh"    /etc/acpi/lid.sh                  "" 755
+systemctl enable --now acpid
 
-echo "==> Done. Close the lid to test — CPU power will be capped at 15W."
+echo "==> Done. Close the lid to test — CPU will be capped at 15W."

@@ -9,15 +9,16 @@ command -v tlp >/dev/null || { echo "needs TLP (run tlp-battery first)"; exit 1;
 DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
 stale=()
-file_current "$DIR/lid-closed.sh"    /usr/local/bin/lid-closed    || stale+=("lid-closed")
-file_current "$DIR/lid-open.sh"      /usr/local/bin/lid-open      || stale+=("lid-open")
-file_current "$DIR/99-lid-tlp.rules" /etc/udev/rules.d/99-lid-tlp.rules || stale+=("udev-rule")
+file_current "$DIR/lid-closed.sh"   /usr/local/bin/lid-closed          || stale+=("lid-closed")
+file_current "$DIR/lid-open.sh"     /usr/local/bin/lid-open            || stale+=("lid-open")
+file_current "$DIR/acpi-lid.event"  /etc/acpi/events/lid-close-power   || stale+=("acpid-event")
+file_current "$DIR/acpi-lid.sh"     /etc/acpi/lid.sh                   || stale+=("acpid-handler")
 
-if [ ${#stale[@]} -eq 0 ]; then
+if [ ${#stale[@]} -eq 0 ] && systemctl is-active acpid >/dev/null 2>&1; then
     echo "already installed"
     exit 2
 fi
 
-[ -f /etc/udev/rules.d/99-lid-tlp.rules ] && echo "installed but stale: ${stale[*]}" || \
+[ -f /etc/acpi/events/lid-close-power ] && echo "installed but stale: ${stale[*]}" || \
     echo "laptop lid + TLP"
 exit 0
