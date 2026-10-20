@@ -1,8 +1,8 @@
 SHELL     := /bin/bash
 FIXES_DIR := fixes
-FIXES     := acpi-gpe-storm claude-memory docker-autostart kde-battery-effects \
-             lid-close-power nvidia-power powerdevil-tlp-ordering thunderbolt-power \
-             tlp-battery wifi-sleep-resume
+FIXES     := acpi-gpe-storm claude-memory docker-autostart ethernet-power \
+             kde-battery-effects lid-close-power nvidia-power \
+             powerdevil-tlp-ordering thunderbolt-power tlp-battery wifi-sleep-resume
 
 .PHONY: all list status help $(FIXES)
 
@@ -21,6 +21,7 @@ help:
 	@echo "  acpi-gpe-storm         Silence runaway ACPI GPE interrupt storm (Tiger Lake firmware bug)"
 	@echo "  claude-memory          Install Claude Code memory integration"
 	@echo "  docker-autostart       Disable Docker/containerd at boot — saves ~8W idle drain"
+	@echo "  ethernet-power         Down wired ethernet on battery when no cable — saves ~5W"
 	@echo "  kde-battery-effects    Disable compositor blur/wobble/animations on battery, restore on AC"
 	@echo "  lid-close-power        Cap CPU at 15W when lid is closed on AC — prevents overheating"
 	@echo "  nvidia-power           Force Intel-only GPU mode — stops NVIDIA drawing ~17W at idle"

@@ -1,0 +1,4 @@
+# Bring wired ethernet down on battery (no cable = no point staying up).
+# Fires on AC plug/unplug and on carrier change (cable plug/unplug).
+SUBSYSTEM=="power_supply", ATTR{type}=="Mains", ACTION=="change", RUN+="/usr/local/bin/ethernet-power"
+SUBSYSTEM=="net", ACTION=="change", ENV{ID_NET_DRIVER}!="", RUN+="/usr/local/bin/ethernet-power"
