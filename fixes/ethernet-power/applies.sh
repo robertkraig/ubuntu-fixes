@@ -16,8 +16,9 @@ done
 
 DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 stale=()
-file_current "$DIR/ethernet-power.sh"     /usr/local/bin/ethernet-power           || stale+=("script")
-file_current "$DIR/99-ethernet-power.rules" /etc/udev/rules.d/99-ethernet-power.rules || stale+=("udev-rule")
+file_current "$DIR/ethernet-power.sh"       /usr/local/bin/ethernet-power                || stale+=("script")
+file_current "$DIR/99-ethernet-power.rules" /etc/udev/rules.d/99-ethernet-power.rules    || stale+=("udev-rule")
+file_current "$DIR/ethernet-aliases.zsh"    /usr/local/share/ethernet-aliases.zsh        || stale+=("aliases")
 
 [ ${#stale[@]} -eq 0 ] && { echo "already applied"; exit 2; }
 [ -f /usr/local/bin/ethernet-power ] && echo "installed but stale: ${stale[*]}" || echo "wired ethernet found"
