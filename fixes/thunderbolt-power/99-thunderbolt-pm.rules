@@ -1,0 +1,9 @@
+# Enable runtime PM on Thunderbolt 4 / USB4 controllers (Tiger Lake-H).
+# These default to control=on (always active) and draw ~1-2W at idle with
+# nothing connected. Setting auto lets them suspend when unused.
+#
+# 9a2b / 9a2d = TB4 PCIe root ports
+# 9a1f         = TB4 NHI (host interface)
+ACTION=="add", SUBSYSTEM=="pci", ATTR{vendor}=="0x8086", ATTR{device}=="0x9a2b", ATTR{power/control}="auto"
+ACTION=="add", SUBSYSTEM=="pci", ATTR{vendor}=="0x8086", ATTR{device}=="0x9a2d", ATTR{power/control}="auto"
+ACTION=="add", SUBSYSTEM=="pci", ATTR{vendor}=="0x8086", ATTR{device}=="0x9a1f", ATTR{power/control}="auto"

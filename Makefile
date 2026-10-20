@@ -1,8 +1,8 @@
 SHELL     := /bin/bash
 FIXES_DIR := fixes
 FIXES     := acpi-gpe-storm claude-memory docker-autostart kde-battery-effects \
-             lid-close-power nvidia-power powerdevil-tlp-ordering tlp-battery \
-             wifi-sleep-resume
+             lid-close-power nvidia-power powerdevil-tlp-ordering thunderbolt-power \
+             tlp-battery wifi-sleep-resume
 
 .PHONY: all list status help $(FIXES)
 
@@ -25,6 +25,7 @@ help:
 	@echo "  lid-close-power        Cap CPU at 15W when lid is closed on AC — prevents overheating"
 	@echo "  nvidia-power           Force Intel-only GPU mode — stops NVIDIA drawing ~17W at idle"
 	@echo "  powerdevil-tlp-ordering  Fix KDE battery widget not showing TLP power profile controls"
+	@echo "  thunderbolt-power      Suspend TB4/USB4 controllers when idle — saves ~1-2W"
 	@echo "  tlp-battery            Replace power-profiles-daemon with TLP for better battery life"
 	@echo "  wifi-sleep-resume      Fix Intel WiFi (BE200/AX210) not coming back after suspend/resume"
 	@echo ""
