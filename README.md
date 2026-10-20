@@ -77,6 +77,20 @@ make tlp-battery
 | Dell Precision 7560 | Intel i7-11850H (Tiger Lake-H) | NVIDIA RTX A2000 Mobile | Intel WiFi 7 BE200 |
 | Dell Precision 7510 | Intel i7-6820HQ (Skylake-H) | NVIDIA Quadro M2000M | Intel AX210 |
 
+## Contributing
+
+If you have a fix for a power, hardware reliability, or developer setup issue
+on Ubuntu + KDE Plasma — open a PR. The bar is low: a working `install.sh`,
+an `applies.sh` that correctly detects whether the fix is needed, and a
+one-paragraph README explaining the problem and what the fix does.
+
+Not ready for a full fix? A PR that just adds a link to another repo or
+upstream issue that covers the same ground is also welcome — the goal is
+for this to be a useful reference, not a walled garden.
+
+If you're working from a similar repo, feel free to link it here or open an
+issue to discuss merging approaches.
+
 ## Design
 
 Each fix is self-contained under `fixes/<name>/`:
