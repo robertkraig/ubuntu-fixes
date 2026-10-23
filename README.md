@@ -54,9 +54,11 @@ make tlp-battery
 | Machine | Idle draw before | After |
 |---|---|---|
 | Precision 7560 (Tiger Lake, RTX A2000, WiFi 7 BE200) | ~20–25W | **~6.3W** |
-| Precision 7510 (Skylake, Quadro M2000M, 4K panel) | ~24W | **~12–13W** |
+| Precision 7510 (Skylake, Quadro M2000M, 4K panel) | ~24W | **~10.9W** |
 
 ![PowerTOP showing 6.29W discharge rate on Precision 7560](proof/dell-precision-7560-power-draw.png)
+
+![PowerTOP showing 10.9W discharge rate on Precision 7510](proof/dell-precision-7510-power-draw.png)
 
 ## Fixes
 
