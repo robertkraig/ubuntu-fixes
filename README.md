@@ -68,6 +68,7 @@ make tlp-battery
 | `nvidia-power` | NVIDIA GPU draws 17W at idle on hybrid Optimus | hybrid GPU + nvidia driver |
 | `acpi-gpe-storm` | Firmware bug fires ACPI GPE ~1500×/sec, blocking deep sleep | GPE over 100/s |
 | `kde-battery-effects` | KWin blur/wobble/animations drain power on battery | KDE Plasma |
+| `kdeconnect-remove` | `kdeconnectd` wakes the CPU ~60×/s (~1W) and restarts itself via D-Bus | KDE Connect installed |
 | `lid-close-power` | CPU runs uncapped with lid closed on AC → sustained 77°C+ heat | lid button + TLP |
 | `wifi-sleep-resume` | Intel WiFi hangs after resume; handles PCI bus wedge state | iwlwifi |
 | `docker-autostart` | Docker + containers silently running at boot, ~8W idle drain | Docker enabled at boot |
