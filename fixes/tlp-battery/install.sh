@@ -30,7 +30,7 @@ echo "==> Picking platform profiles..."
 pp=""
 if [ -f "$CHOICES_FILE" ]; then
     echo "    firmware offers: $(cat "$CHOICES_FILE")"
-    ac=$(pick_profile balanced performance)
+    ac=$(pick_profile performance balanced)
     bat=$(pick_profile low-power quiet cool balanced)
     sav=$(pick_profile low-power quiet cool)
     [ -n "$ac" ]  && pp+="PLATFORM_PROFILE_ON_AC=$ac"$'\n'
