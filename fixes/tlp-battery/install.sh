@@ -44,18 +44,24 @@ echo "==> Writing $DROPIN..."
 awk -v pp="$pp" '$0 == "{{PLATFORM_PROFILE}}" { printf "%s", pp; next } { print }' \
     "$DIR/tlp.conf" > "$DROPIN"
 
-# /etc/tlp.conf is read last and overrides every drop-in
+# /etc/tlp.conf is read last and overrides every drop-in.
+# Comment out all active lines so the drop-in takes full effect.
+# TLP_DEFAULT_MODE=BAT is silently dropped (forces battery policies on AC).
+# Everything else is migrated to /etc/tlp.d/50-local.conf so nothing is lost.
 if grep -qvE '^\s*(#|$)' /etc/tlp.conf 2>/dev/null; then
-    echo "  ! /etc/tlp.conf has active settings, which override $DROPIN:"
-    grep -vE '^\s*(#|$)' /etc/tlp.conf | sed 's/^/      /'
-    echo "    Move any you want to keep into /etc/tlp.d/50-local.conf and comment them out."
-fi
-
-# If /etc/tlp.conf has TLP_DEFAULT_MODE=BAT active, comment it out — it overrides
-# the drop-in and forces battery policies even on AC, making the machine feel sluggish.
-if grep -qE '^TLP_DEFAULT_MODE=BAT' /etc/tlp.conf 2>/dev/null; then
-    echo "==> Commenting out TLP_DEFAULT_MODE=BAT in /etc/tlp.conf (overrides AC policies)..."
-    sed -i 's/^TLP_DEFAULT_MODE=BAT/#TLP_DEFAULT_MODE=BAT/' /etc/tlp.conf
+    active=$(grep -vE '^\s*(#|$)' /etc/tlp.conf)
+    migrate=$(echo "$active" | grep -v '^TLP_DEFAULT_MODE=')
+    if [ -n "$migrate" ]; then
+        echo "==> Migrating active /etc/tlp.conf settings to /etc/tlp.d/50-local.conf..."
+        {
+            echo "# Migrated from /etc/tlp.conf by ubuntu-fixes tlp-battery install"
+            echo "$migrate"
+        } >> /etc/tlp.d/50-local.conf
+        echo "    Migrated:"
+        echo "$migrate" | sed 's/^/      /'
+    fi
+    echo "==> Commenting out all active lines in /etc/tlp.conf (drop-in takes over)..."
+    sed -i 's/^\([^#].*\)$/# \1/' /etc/tlp.conf
 fi
 
 echo "==> Enabling and starting TLP services..."
