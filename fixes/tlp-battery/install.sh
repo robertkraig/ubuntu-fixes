@@ -50,7 +50,8 @@ awk -v pp="$pp" '$0 == "{{PLATFORM_PROFILE}}" { printf "%s", pp; next } { print 
 # Everything else is migrated to /etc/tlp.d/50-local.conf so nothing is lost.
 if grep -qvE '^\s*(#|$)' /etc/tlp.conf 2>/dev/null; then
     active=$(grep -vE '^\s*(#|$)' /etc/tlp.conf)
-    migrate=$(echo "$active" | grep -v '^TLP_DEFAULT_MODE=')
+    # Drop settings the drop-in already owns — migrating them creates conflicts
+    migrate=$(echo "$active" | grep -vE '^(TLP_DEFAULT_MODE=|PLATFORM_PROFILE_ON_)')
     if [ -n "$migrate" ]; then
         echo "==> Migrating active /etc/tlp.conf settings to /etc/tlp.d/50-local.conf..."
         {
@@ -69,4 +70,4 @@ systemctl enable tlp tlp-pd
 systemctl restart tlp tlp-pd
 
 echo "==> Done. Check with: tlpctl list"
-echo "    Charge thresholds: start=20% stop=80% — use 'sudo tlp fullcharge' before trips."
+echo "    Charge thresholds: start=50% stop=80% — use 'sudo tlp fullcharge' before trips."
