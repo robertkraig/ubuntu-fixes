@@ -10,6 +10,10 @@ case "$driver" in
 esac
 
 if [ -f /etc/tlp.d/00-ubuntu-fixes.conf ] && dpkg -l tlp-pd 2>/dev/null | grep -q '^ii'; then
+    stale=()
+    grep -qE '^TLP_DEFAULT_MODE=BAT' /etc/tlp.conf 2>/dev/null && stale+=("TLP_DEFAULT_MODE=BAT active in /etc/tlp.conf")
+    grep -q 'START_CHARGE_THRESH_BAT0=20' /etc/tlp.d/00-ubuntu-fixes.conf 2>/dev/null || stale+=("charge thresholds missing")
+    [ ${#stale[@]} -gt 0 ] && { echo "installed but stale: ${stale[*]}"; exit 0; }
     echo "already installed: TLP $(dpkg-query -W -f='${Version}' tlp) + tlp-pd, $driver"
     exit 2
 fi

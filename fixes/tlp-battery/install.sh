@@ -51,8 +51,16 @@ if grep -qvE '^\s*(#|$)' /etc/tlp.conf 2>/dev/null; then
     echo "    Move any you want to keep into /etc/tlp.d/50-local.conf and comment them out."
 fi
 
+# If /etc/tlp.conf has TLP_DEFAULT_MODE=BAT active, comment it out — it overrides
+# the drop-in and forces battery policies even on AC, making the machine feel sluggish.
+if grep -qE '^TLP_DEFAULT_MODE=BAT' /etc/tlp.conf 2>/dev/null; then
+    echo "==> Commenting out TLP_DEFAULT_MODE=BAT in /etc/tlp.conf (overrides AC policies)..."
+    sed -i 's/^TLP_DEFAULT_MODE=BAT/#TLP_DEFAULT_MODE=BAT/' /etc/tlp.conf
+fi
+
 echo "==> Enabling and starting TLP services..."
 systemctl enable tlp tlp-pd
 systemctl restart tlp tlp-pd
 
 echo "==> Done. Check with: tlpctl list"
+echo "    Charge thresholds: start=20% stop=80% — use 'sudo tlp fullcharge' before trips."
