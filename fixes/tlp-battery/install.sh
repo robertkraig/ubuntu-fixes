@@ -40,9 +40,42 @@ else
     echo "    no ACPI platform profile on this machine, skipping"
 fi
 
+echo "==> Reading Intel GPU clock range..."
+gpu=""
+rp0=$(cat /sys/class/drm/card*/gt_RP0_freq_mhz 2>/dev/null | head -1)
+rpn=$(cat /sys/class/drm/card*/gt_RPn_freq_mhz 2>/dev/null | head -1)
+if [ -n "$rp0" ] && [ -n "$rpn" ]; then
+    # Power-saver: two thirds of max, rounded down to 50 MHz
+    sav=$(( rp0 * 2 / 3 / 50 * 50 )); [ "$sav" -lt "$rpn" ] && sav=$rpn
+    echo "    GPU ${rpn}-${rp0} MHz, power-saver max ${sav} MHz"
+    for mode in AC BAT; do
+        gpu+="INTEL_GPU_MIN_FREQ_ON_$mode=$rpn"$'\n'"INTEL_GPU_MAX_FREQ_ON_$mode=$rp0"$'\n'"INTEL_GPU_BOOST_FREQ_ON_$mode=$rp0"$'\n'
+    done
+    gpu+="INTEL_GPU_MIN_FREQ_ON_SAV=$rpn"$'\n'"INTEL_GPU_MAX_FREQ_ON_SAV=$sav"$'\n'"INTEL_GPU_BOOST_FREQ_ON_SAV=$sav"$'\n'
+else
+    echo "    no i915 GPU clock controls, skipping"
+fi
+
 echo "==> Writing $DROPIN..."
-awk -v pp="$pp" '$0 == "{{PLATFORM_PROFILE}}" { printf "%s", pp; next } { print }' \
-    "$DIR/tlp.conf" > "$DROPIN"
+awk -v pp="$pp" -v gpu="$gpu" '
+    $0 == "{{PLATFORM_PROFILE}}" { printf "%s", pp; next }
+    $0 == "{{INTEL_GPU_FREQ}}"   { printf "%s", gpu; next }
+    { print }' "$DIR/tlp.conf" > "$DROPIN"
+
+# Drop-ins are read in name order and later ones win. Comment out any setting
+# a later drop-in (hand-tuned or from another tool) has for a key we own.
+for f in /etc/tlp.d/*.conf; do
+    [[ "$f" > "$DROPIN" ]] || continue
+    overridden=$(grep -oE '^[A-Z0-9_]+=' "$DROPIN" | sort -u | while read -r key; do
+        grep -q "^$key" "$f" && echo "${key%=}"
+    done)
+    [ -z "$overridden" ] && continue
+    echo "==> Commenting out settings in $f that override $DROPIN:"
+    for key in $overridden; do
+        sed -i "s/^$key=/# overridden by ubuntu-fixes: $key=/" "$f"
+        echo "      $key"
+    done
+done
 
 # /etc/tlp.conf is read last and overrides every drop-in.
 # Comment out all active lines so the drop-in takes full effect.
