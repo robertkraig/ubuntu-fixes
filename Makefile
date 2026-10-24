@@ -2,7 +2,7 @@ SHELL     := /bin/bash
 FIXES_DIR := fixes
 FIXES     := acpi-gpe-storm claude-memory docker-autostart ethernet-power \
              kde-battery-effects kdeconnect-remove lid-close-power nvidia-power \
-             powerdevil-tlp-ordering ssd-tuning thunderbolt-power tlp-battery wifi-sleep-resume
+             powerdevil-tlp-ordering shell-power-status ssd-tuning thunderbolt-power tlp-battery wifi-sleep-resume
 
 .PHONY: all list status help $(FIXES)
 
@@ -28,6 +28,7 @@ help:
 	@echo "  nvidia-power           Force Intel-only GPU mode — stops NVIDIA drawing ~17W at idle"
 	@echo "  powerdevil-tlp-ordering  Fix KDE battery widget not showing TLP power profile controls"
 	@echo "  ssd-tuning             Add noatime to ext4 mounts + enable zram — reduces SSD wear"
+	@echo "  shell-power-status     Show power profile, battery and GPU state in new terminals"
 	@echo "  thunderbolt-power      Suspend TB4/USB4 controllers when idle — saves ~1-2W"
 	@echo "  tlp-battery            Replace power-profiles-daemon with TLP for better battery life"
 	@echo "  wifi-sleep-resume      Fix Intel WiFi (BE200/AX210) not coming back after suspend/resume"

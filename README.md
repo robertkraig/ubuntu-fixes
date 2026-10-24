@@ -73,6 +73,7 @@ make tlp-battery
 | `wifi-sleep-resume` | Intel WiFi hangs after resume; handles PCI bus wedge state | iwlwifi |
 | `docker-autostart` | Docker + containers silently running at boot, ~8W idle drain | Docker enabled at boot |
 | `powerdevil-tlp-ordering` | Plasma battery widget not showing TLP power profile controls | Plasma + tlp-pd |
+| `shell-power-status` | No quick way to see the power profile, battery draw and GPU state | laptop (battery) |
 | `claude-memory` | Claude Code memory files for this machine's workflow | memories not installed |
 
 ## Tested on
