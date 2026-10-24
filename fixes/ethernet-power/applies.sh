@@ -3,6 +3,9 @@
 
 source "$(dirname "${BASH_SOURCE[0]}")/../../lib/deploy.sh"
 
+ls -d /sys/class/power_supply/*/ 2>/dev/null | while read -r ps; do cat "$ps/type"; done | grep -qx Battery \
+    || { echo "no battery (not a laptop)"; exit 1; }
+
 # Need at least one wired ethernet interface
 found=0
 for iface in $(ls /sys/class/net/ 2>/dev/null); do
