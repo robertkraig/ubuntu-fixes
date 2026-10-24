@@ -13,6 +13,7 @@ if [ -f /etc/tlp.d/00-ubuntu-fixes.conf ] && dpkg -l tlp-pd 2>/dev/null | grep -
     stale=()
     grep -qvE '^\s*(#|$)' /etc/tlp.conf 2>/dev/null && stale+=("active settings in /etc/tlp.conf override drop-in")
     grep -q 'START_CHARGE_THRESH_BAT0=50' /etc/tlp.d/00-ubuntu-fixes.conf 2>/dev/null || stale+=("charge thresholds missing")
+    grep -q "^RUNTIME_PM_ON_AC=auto" /etc/tlp.d/00-ubuntu-fixes.conf 2>/dev/null || stale+=("runtime PM on AC not set")
     for f in /etc/tlp.d/*.conf; do
         [[ "$f" > /etc/tlp.d/00-ubuntu-fixes.conf ]] || continue
         while read -r key; do
