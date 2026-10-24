@@ -116,3 +116,14 @@ fix redeploys it. No fix touches another fix's files.
   exiting.
 - Source template files using `lib/deploy.sh` helpers (`deploy_file`,
   `deploy_template`, `file_current`, `deployed_and_current`).
+- Deployed scripts that run on their own (udev, acpid, systemd hooks) must log
+  to the journal so failures can be debugged after the fact. Put this right
+  after the header comment, then `echo` each decision with the values it acted
+  on (before/after):
+
+  ```bash
+  exec > >(logger -t ubuntu-fixes/<name>) 2>&1
+  ```
+
+  View one script with `journalctl -t ubuntu-fixes/<name>`, or all of them
+  with `journalctl -b | grep ubuntu-fixes/`.

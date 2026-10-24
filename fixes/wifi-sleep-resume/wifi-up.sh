@@ -4,6 +4,9 @@
 
 [ "$(id -u)" -eq 0 ] || exec sudo "$0" "$@"
 
+# Log everything to the journal too: journalctl -t ubuntu-fixes/wifi-up
+exec > >(tee >(logger -t ubuntu-fixes/wifi-up)) 2>&1
+
 SERVICE=wifi-sleep-unload.service
 
 # Module detection: read from the service Description line ("Unload iwlwifi before sleep ...")

@@ -4,6 +4,9 @@
 # On AC: reload exactly the effects that were loaded before, so your KWin settings are kept.
 # Set ON_AC=0 or ON_AC=1 to force a state (used by the kde-battery-effects-off/on wrappers).
 
+# Log everything to the journal: journalctl -t ubuntu-fixes/kde-power-effects
+exec > >(logger -t ubuntu-fixes/kde-power-effects) 2>&1
+
 export DBUS_SESSION_BUS_ADDRESS="${DBUS_SESSION_BUS_ADDRESS:-unix:path=/run/user/$(id -u)/bus}"
 
 STATE="${XDG_STATE_HOME:-$HOME/.local/state}/kde-power-effects.saved"
@@ -20,7 +23,8 @@ ON_AC=${ON_AC:-1}
 effect() { qdbus6 org.kde.KWin /Effects "$@" 2>/dev/null; }
 
 if [ "$ON_AC" = "1" ]; then
-    [ -f "$STATE" ] || exit 0
+    [ -f "$STATE" ] || { echo "on AC, nothing saved to restore"; exit 0; }
+    echo "on AC, reloading: $(tr '\n' ' ' < "$STATE")"
     while read -r e; do
         [ -n "$e" ] && effect loadEffect "$e" >/dev/null
     done < "$STATE"
@@ -33,6 +37,7 @@ else
         [ "$(effect isEffectLoaded "$e")" = "true" ] && saved+=$'\n'"$e"
     done
     echo "$saved" | sed '/^$/d' | sort -u > "$STATE"
+    echo "on battery, unloading: $(tr '\n' ' ' < "$STATE")"
     while read -r e; do
         effect unloadEffect "$e"
     done < "$STATE"
