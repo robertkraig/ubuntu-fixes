@@ -1,9 +1,8 @@
-# Enable runtime PM on Thunderbolt 4 / USB4 controllers (Tiger Lake-H).
-# These default to control=on (always active) and draw ~1-2W at idle with
-# nothing connected. Setting auto lets them suspend when unused.
+# Enable runtime PM on Thunderbolt / USB4 controllers (PCIe root ports, NHI, USB).
+# Some firmware leaves these at control=on (always active), drawing ~1-2W at idle
+# with nothing connected. Setting auto lets them suspend when unused.
 #
-# 9a2b / 9a2d = TB4 PCIe root ports
-# 9a1f         = TB4 NHI (host interface)
-ACTION=="add", SUBSYSTEM=="pci", ATTR{vendor}=="0x8086", ATTR{device}=="0x9a2b", ATTR{power/control}="auto"
-ACTION=="add", SUBSYSTEM=="pci", ATTR{vendor}=="0x8086", ATTR{device}=="0x9a2d", ATTR{power/control}="auto"
-ACTION=="add", SUBSYSTEM=="pci", ATTR{vendor}=="0x8086", ATTR{device}=="0x9a1f", ATTR{power/control}="auto"
+# Matched by PCI database name rather than device ID so it covers every generation:
+# Intel integrated TB (Ice Lake and newer), discrete Intel TB controllers, AMD USB4.
+ACTION=="add", SUBSYSTEM=="pci", IMPORT{builtin}="hwdb --subsystem=pci"
+ACTION=="add", SUBSYSTEM=="pci", ENV{ID_MODEL_FROM_DATABASE}=="*Thunderbolt*|*USB4*", ATTR{power/control}="auto"

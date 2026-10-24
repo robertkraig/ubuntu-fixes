@@ -13,12 +13,10 @@ deploy_file "$DIR/99-thunderbolt-pm.rules" /etc/udev/rules.d/99-thunderbolt-pm.r
 udevadm control --reload-rules
 
 echo "==> Applying to already-present devices..."
-for id in 9a2b 9a2d 9a1f; do
-    addr=$(lspci -n | grep -i "8086:$id" | awk '{print $1}')
-    [ -z "$addr" ] && continue
-    echo auto > "/sys/bus/pci/devices/0000:$addr/power/control" 2>/dev/null || true
-    pwr=$(cat "/sys/bus/pci/devices/0000:$addr/power/runtime_status" 2>/dev/null)
-    echo "  0000:$addr → $pwr"
+lspci -D | grep -iE 'thunderbolt|usb4' | while read -r addr name; do
+    echo auto > "/sys/bus/pci/devices/$addr/power/control" 2>/dev/null || true
+    pwr=$(cat "/sys/bus/pci/devices/$addr/power/runtime_status" 2>/dev/null)
+    echo "  $addr ${name#*: } → $pwr"
 done
 
-echo "==> Done. TB4 controllers will suspend when nothing is connected (~1-2W saved)."
+echo "==> Done. Thunderbolt/USB4 controllers will suspend when nothing is connected (~1-2W saved)."

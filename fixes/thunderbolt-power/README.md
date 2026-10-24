@@ -2,25 +2,24 @@
 
 ## Problem
 
-On Tiger Lake-H systems, the Thunderbolt 4 PCIe root ports and NHI controller
-default to `power/control=on` (runtime PM disabled). With nothing plugged into
-the Thunderbolt ports, they still draw ~1-2W continuously.
+On some systems (seen on Tiger Lake-H), the Thunderbolt PCIe root ports and NHI
+controller default to `power/control=on` (runtime PM disabled). With nothing
+plugged into the Thunderbolt ports, they still draw ~1-2W continuously.
 
 Setting `power/control=auto` lets the kernel suspend them when idle.
 
 ## What it does
 
-Installs a udev rule that sets `power/control=auto` on the three affected
-devices when they appear at boot:
-
-- `8086:9a2b` — TB4 PCIe Root Port #0
-- `8086:9a2d` — TB4 PCIe Root Port #1
-- `8086:9a1f` — TB4 NHI #0
+Installs a udev rule that sets `power/control=auto` on every PCI device whose
+PCI database name contains "Thunderbolt" or "USB4" when it appears at boot, and
+applies the same to devices already present. Matching by name instead of device
+ID covers Intel integrated Thunderbolt (Ice Lake and newer), discrete Intel
+Thunderbolt controllers, and AMD USB4 without a per-generation ID list.
 
 ## Detects
 
-Presence of any of the three PCI device IDs via `lspci`.
+Any device `lspci` names as Thunderbolt or USB4.
 
 ## Tested on
 
-- Dell Precision 7560 (Tiger Lake-H)
+- Dell Precision 7560 (Tiger Lake-H): `8086:9a2b`, `8086:9a2d` root ports, `8086:9a1f` NHI

@@ -29,7 +29,7 @@ help:
 	@echo "  powerdevil-tlp-ordering  Fix KDE battery widget not showing TLP power profile controls"
 	@echo "  ssd-tuning             Add noatime to ext4 mounts + enable zram — reduces SSD wear"
 	@echo "  shell-power-status     Show power profile, battery and GPU state in new terminals"
-	@echo "  thunderbolt-power      Suspend TB4/USB4 controllers when idle — saves ~1-2W"
+	@echo "  thunderbolt-power      Suspend Thunderbolt/USB4 controllers when idle — saves ~1-2W"
 	@echo "  tlp-battery            Replace power-profiles-daemon with TLP for better battery life"
 	@echo "  wifi-sleep-resume      Fix Intel WiFi (BE200/AX210) not coming back after suspend/resume"
 	@echo ""
