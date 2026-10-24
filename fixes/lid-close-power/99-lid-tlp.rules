@@ -1,2 +1,0 @@
-SUBSYSTEM=="button", KERNEL=="LID0", ACTION=="change", ATTR{state}=="closed", RUN+="/usr/local/bin/lid-closed"
-SUBSYSTEM=="button", KERNEL=="LID0", ACTION=="change", ATTR{state}=="open",   RUN+="/usr/local/bin/lid-open"

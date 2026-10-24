@@ -19,7 +19,7 @@ Ubuntu 26.04 LTS ("Resolute Raccoon"), kernel 7.0, KDE Plasma 6.6.6 on Wayland.
   - `CPU_SCALING_GOVERNOR_ON_AC=powersave` (changed from performance to reduce idle heat)
   - `CPU_MAX_PERF_ON_BAT=100`, `CPU_BOOST_ON_BAT=1` (relaxed from aggressive 50%/2GHz cap)
   - `CPU_ENERGY_PERF_POLICY_ON_BAT=power` (NOT power-saver — that's a ppd value, invalid in TLP)
-- Lid close udev rule: `/etc/udev/rules.d/99-lid-tlp.rules` — triggers `tlp bat` on lid close, `tlp ac` on open
+- Lid close: acpid handler `/etc/acpi/lid.sh` runs `lid-closed` (tlp bat, low platform profile, 15W RAPL cap via MSR or MMIO zone) / `lid-open` (restore)
 - NVIDIA: `/etc/modprobe.d/nvidia-graphics-drivers-kms.conf` has `NVreg_DynamicPowerManagement=0x02`
 - GRUB: `acpi_mask_gpe=0x6E` added to mask runaway gpe6E interrupt (~1500/sec was draining battery); `update-grub` run — needs reboot to apply
 - Config backups at `~/.config-backup-pre-2604/`
