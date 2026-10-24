@@ -79,11 +79,17 @@ for _ in $(seq 10); do
 done
 
 if [ -z "$WDIR" ]; then
-    LOG=/home/rkraig/ubuntu-fixes/wifi-up-failure.txt
+    # Save next to the user who ran sudo; under systemd (no SUDO_USER) use /var/log
+    if [ -n "$SUDO_USER" ]; then
+        LOG="$(getent passwd "$SUDO_USER" | cut -d: -f6)/wifi-up-failure.txt"
+    else
+        LOG=/var/log/wifi-up-failure.txt
+    fi
     {
         echo "=== wifi-up failure $(date) ==="
         echo "--- kernel wifi/pci messages ---"
-        journalctl -b -k | grep -i -E 'iwlwifi|iwlmld|HW_REV|PCI issues' | tail -40
+        # Driver family prefix catches its helper modules too (iwlwifi/iwlmld, mt7921e/mt7921_common, ath11k/ath11k_pci)
+        journalctl -b -k | grep -i -E "${MODULE:0:3}|HW_REV|PCI issues" | tail -40
         echo "--- service status ---"
         systemctl status "$SERVICE" --no-pager 2>&1
         echo "--- rfkill ---"
@@ -91,7 +97,7 @@ if [ -z "$WDIR" ]; then
         echo "--- lspci ---"
         lspci -k | grep -A3 -i 'network controller' 2>&1
     } > "$LOG" 2>&1
-    chown rkraig:rkraig "$LOG" 2>/dev/null || true
+    [ -n "$SUDO_USER" ] && chown "$SUDO_USER:" "$LOG" 2>/dev/null || true
     echo "ERROR: no WiFi interface after loading $MODULE."
     echo "       Logs saved to $LOG — show that file to Claude."
     exit 1

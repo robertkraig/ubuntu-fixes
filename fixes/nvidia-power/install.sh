@@ -56,5 +56,6 @@ echo "==> Updating initramfs..."
 update-initramfs -u
 
 echo "==> Done. Reboot required."
-echo "    After reboot, verify with: cat /sys/bus/pci/devices/0000:01:00.0/power/runtime_status"
+GPU_ADDR=$(lspci -D -d 10de: | grep -E 'VGA|3D|Display' | awk '{print $1; exit}')
+echo "    After reboot, verify with: cat /sys/bus/pci/devices/$GPU_ADDR/power/runtime_status"
 echo "    Expected: suspended"
