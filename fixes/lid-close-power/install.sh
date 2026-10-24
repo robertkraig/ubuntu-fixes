@@ -30,7 +30,8 @@ fi
 # Which RAPL zones accept a power limit? Write each current PL1 back to itself.
 echo "==> Checking which CPU power limit interfaces accept writes..."
 capped=0
-for zone in /sys/class/powercap/intel-rapl/intel-rapl:0 /sys/class/powercap/intel-rapl-mmio/intel-rapl-mmio:0; do
+for zone in /sys/class/powercap/intel-rapl*:*; do
+    [[ "$(cat "$zone/name" 2>/dev/null)" == package-* ]] || continue
     f="$zone/constraint_0_power_limit_uw"
     [ -f "$f" ] || continue
     if cat "$f" > "$f" 2>/dev/null; then

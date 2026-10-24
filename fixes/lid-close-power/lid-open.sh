@@ -4,7 +4,14 @@
 # Log everything to the journal: journalctl -t ubuntu-fixes/lid-open
 exec > >(logger -t ubuntu-fixes/lid-open) 2>&1
 
-echo "lid opened (AC online=$(cat /sys/class/power_supply/AC/online 2>/dev/null))"
+# Charger name varies (AC, AC0, ADP1, ACAD), so find the Mains supply
+ac_online() {
+    for ps in /sys/class/power_supply/*; do
+        [ "$(cat "$ps/type" 2>/dev/null)" = Mains ] && { cat "$ps/online"; return; }
+    done
+}
+
+echo "lid opened (AC online=$(ac_online))"
 
 # Re-apply TLP for the actual power source (sets platform profile, EPP, etc.)
 profile_before=$(cat /sys/firmware/acpi/platform_profile 2>/dev/null)
@@ -17,7 +24,9 @@ else
 fi
 
 # Remove CPU power cap — restore the limits lid-closed saved for each RAPL zone
-ZONES="/sys/class/powercap/intel-rapl/intel-rapl:0 /sys/class/powercap/intel-rapl-mmio/intel-rapl-mmio:0"
+ZONES=$(for z in /sys/class/powercap/intel-rapl*:*; do
+    [[ "$(cat "$z/name" 2>/dev/null)" == package-* ]] && echo "$z"
+done)
 SAVE=/run/lid-close-power.rapl
 
 watts() { awk -v uw="$1" 'BEGIN { printf "%gW", uw / 1e6 }'; }
@@ -37,12 +46,16 @@ set_limit() {  # zone, constraint number, microwatts
 }
 
 [ -f "$SAVE" ] || echo "no saved limits in $SAVE, falling back to max_power_uw"
+# Last resort for PL2: the highest PL2 saved from any zone. Some firmware reports
+# the MSR zone's PL2 (and its max) as 0 while the MMIO zone holds the real value.
+best_pl2=$(awk '$3 > 0 { print $3 }' "$SAVE" 2>/dev/null | sort -n | tail -1)
 for zone in $ZONES; do
     [ -f "$zone/constraint_0_power_limit_uw" ] || continue
     read -r _ pl1 pl2 < <(grep "^$zone " "$SAVE" 2>/dev/null)
     # Never write 0: a zero PL2 pins the CPU at its minimum frequency.
     [ "${pl1:-0}" -gt 0 ] || pl1=$(cat "$zone/constraint_0_max_power_uw" 2>/dev/null)
     [ "${pl2:-0}" -gt 0 ] || pl2=$(cat "$zone/constraint_1_max_power_uw" 2>/dev/null)
+    [ "${pl2:-0}" -gt 0 ] || pl2=$best_pl2
     for c in 0 1; do
         v=$pl1; [ "$c" -eq 1 ] && v=$pl2
         if [ "${v:-0}" -gt 0 ]; then

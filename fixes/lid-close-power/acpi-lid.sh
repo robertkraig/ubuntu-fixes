@@ -4,7 +4,8 @@
 # Log everything to the journal: journalctl -t ubuntu-fixes/acpi-lid
 exec > >(logger -t ubuntu-fixes/acpi-lid) 2>&1
 
-STATE=$(cat /proc/acpi/button/lid/LID0/state 2>/dev/null | awk '{print $2}')
+# Lid device name varies (LID0, LID, LID1)
+STATE=$(cat /proc/acpi/button/lid/*/state 2>/dev/null | awk '{print $2; exit}')
 echo "event: $*, lid $STATE"
 case "$STATE" in
     closed) exec /usr/local/bin/lid-closed ;;

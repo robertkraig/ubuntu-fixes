@@ -4,7 +4,14 @@
 # Log everything to the journal: journalctl -t ubuntu-fixes/lid-closed
 exec > >(logger -t ubuntu-fixes/lid-closed) 2>&1
 
-echo "lid closed (AC online=$(cat /sys/class/power_supply/AC/online 2>/dev/null))"
+# Charger name varies (AC, AC0, ADP1, ACAD), so find the Mains supply
+ac_online() {
+    for ps in /sys/class/power_supply/*; do
+        [ "$(cat "$ps/type" 2>/dev/null)" = Mains ] && { cat "$ps/online"; return; }
+    done
+}
+
+echo "lid closed (AC online=$(ac_online))"
 
 profile_before=$(cat /sys/firmware/acpi/platform_profile 2>/dev/null)
 /usr/sbin/tlp bat
@@ -26,14 +33,18 @@ fi
 
 # Cap CPU package power (RAPL): 15W sustained, 20W burst (PL1/PL2).
 # This is the biggest single lever for heat reduction under lid.
-# There are two RAPL interfaces: the MSR zone (intel-rapl) and the MMIO zone
-# (intel-rapl-mmio). Firmware may enforce either and reject writes to the other
-# (e.g. ENODATA on a disabled MSR zone), so try both and read back the result.
-ZONES="/sys/class/powercap/intel-rapl/intel-rapl:0 /sys/class/powercap/intel-rapl-mmio/intel-rapl-mmio:0"
+# There are two RAPL interfaces: the MSR zone (intel-rapl:N) and the MMIO zone
+# (intel-rapl-mmio:N), one per CPU package. AMD CPUs register under intel-rapl too.
+# Firmware may enforce either and reject writes to the other (e.g. ENODATA on a
+# disabled MSR zone), so try every package zone and read back the result.
+ZONES=$(for z in /sys/class/powercap/intel-rapl*:*; do
+    [[ "$(cat "$z/name" 2>/dev/null)" == package-* ]] && echo "$z"
+done)
 SAVE=/run/lid-close-power.rapl
 
 # Save the current limits so lid-open can restore them exactly. Don't overwrite on
-# repeated close events — that would save our own cap. Zero limits are never saved.
+# repeated close events — that would save our own cap. A zero is saved as-is and
+# lid-open treats it as unknown.
 if [ -f "$SAVE" ]; then
     echo "keeping saved limits: $(tr '\n' ' ' < "$SAVE")"
 else
