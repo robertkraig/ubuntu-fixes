@@ -125,5 +125,8 @@ fix redeploys it. No fix touches another fix's files.
   exec > >(logger -t ubuntu-fixes/<name>) 2>&1
   ```
 
-  View one script with `journalctl -t ubuntu-fixes/<name>`, or all of them
-  with `journalctl -b | grep ubuntu-fixes/`.
+  Log each setting a script touches as one line, `changed: <what> <before> -> <after>`
+  or `unchanged: <what> ...` with the reason, so changes are easy to filter.
+
+  View one script with `journalctl -t ubuntu-fixes/<name>`, all of them with
+  `journalctl -b | grep ubuntu-fixes/`, or only changes with `-g changed:`.

@@ -6,16 +6,23 @@ exec > >(logger -t ubuntu-fixes/lid-closed) 2>&1
 
 echo "lid closed (AC online=$(cat /sys/class/power_supply/AC/online 2>/dev/null))"
 
+profile_before=$(cat /sys/firmware/acpi/platform_profile 2>/dev/null)
 /usr/sbin/tlp bat
 
-# Lowest platform profile the firmware offers
+# Lowest platform profile the firmware offers. tlp bat may already have set one,
+# so log the profile from before TLP ran.
 for want in low-power quiet cool; do
     if grep -qw "$want" /sys/firmware/acpi/platform_profile_choices 2>/dev/null; then
         echo "$want" > /sys/firmware/acpi/platform_profile
         break
     fi
 done
-echo "platform_profile=$(cat /sys/firmware/acpi/platform_profile 2>/dev/null)"
+profile_after=$(cat /sys/firmware/acpi/platform_profile 2>/dev/null)
+if [ "$profile_before" != "$profile_after" ]; then
+    echo "changed: platform_profile $profile_before -> $profile_after"
+else
+    echo "unchanged: platform_profile already $profile_after"
+fi
 
 # Cap CPU package power (RAPL): 15W sustained, 20W burst (PL1/PL2).
 # This is the biggest single lever for heat reduction under lid.
@@ -39,13 +46,19 @@ else
     echo "saved limits: $(tr '\n' ' ' < "$SAVE")"
 fi
 
+watts() { awk -v uw="$1" 'BEGIN { printf "%gW", uw / 1e6 }'; }
+
 set_limit() {  # zone, constraint number, microwatts
-    local f="$1/constraint_$2_power_limit_uw"
+    local f="$1/constraint_$2_power_limit_uw" name before
     [ -f "$f" ] || return
-    if echo "$3" > "$f" 2>/dev/null && [ "$(cat "$f")" = "$3" ]; then
-        echo "$(basename "$1") PL$(( $2 + 1 )) capped to $3"
+    name="$(basename "$1") PL$(( $2 + 1 ))"
+    before=$(cat "$f")
+    if [ "$before" = "$3" ]; then
+        echo "unchanged: $name already $(watts "$before")"
+    elif echo "$3" > "$f" 2>/dev/null && [ "$(cat "$f")" = "$3" ]; then
+        echo "changed: $name $(watts "$before") -> $(watts "$3")"
     else
-        echo "$(basename "$1") PL$(( $2 + 1 )) write rejected by firmware, still $(cat "$f")"
+        echo "unchanged: $name $(watts "$before"), firmware rejected $(watts "$3")"
     fi
 }
 

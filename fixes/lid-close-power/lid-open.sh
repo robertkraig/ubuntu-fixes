@@ -7,20 +7,32 @@ exec > >(logger -t ubuntu-fixes/lid-open) 2>&1
 echo "lid opened (AC online=$(cat /sys/class/power_supply/AC/online 2>/dev/null))"
 
 # Re-apply TLP for the actual power source (sets platform profile, EPP, etc.)
+profile_before=$(cat /sys/firmware/acpi/platform_profile 2>/dev/null)
 /usr/sbin/tlp start
-echo "platform_profile=$(cat /sys/firmware/acpi/platform_profile 2>/dev/null)"
+profile_after=$(cat /sys/firmware/acpi/platform_profile 2>/dev/null)
+if [ "$profile_before" != "$profile_after" ]; then
+    echo "changed: platform_profile $profile_before -> $profile_after"
+else
+    echo "unchanged: platform_profile already $profile_after"
+fi
 
 # Remove CPU power cap — restore the limits lid-closed saved for each RAPL zone
 ZONES="/sys/class/powercap/intel-rapl/intel-rapl:0 /sys/class/powercap/intel-rapl-mmio/intel-rapl-mmio:0"
 SAVE=/run/lid-close-power.rapl
 
+watts() { awk -v uw="$1" 'BEGIN { printf "%gW", uw / 1e6 }'; }
+
 set_limit() {  # zone, constraint number, microwatts
-    local f="$1/constraint_$2_power_limit_uw"
+    local f="$1/constraint_$2_power_limit_uw" name before
     [ -f "$f" ] || return
-    if echo "$3" > "$f" 2>/dev/null && [ "$(cat "$f")" = "$3" ]; then
-        echo "$(basename "$1") PL$(( $2 + 1 )) restored to $3"
+    name="$(basename "$1") PL$(( $2 + 1 ))"
+    before=$(cat "$f")
+    if [ "$before" = "$3" ]; then
+        echo "unchanged: $name already $(watts "$before")"
+    elif echo "$3" > "$f" 2>/dev/null && [ "$(cat "$f")" = "$3" ]; then
+        echo "changed: $name $(watts "$before") -> $(watts "$3")"
     else
-        echo "$(basename "$1") PL$(( $2 + 1 )) write rejected by firmware, still $(cat "$f")"
+        echo "unchanged: $name $(watts "$before"), firmware rejected $(watts "$3")"
     fi
 }
 
@@ -36,7 +48,7 @@ for zone in $ZONES; do
         if [ "${v:-0}" -gt 0 ]; then
             set_limit "$zone" "$c" "$v"
         else
-            echo "$(basename "$zone") PL$(( c + 1 )) has no known good value, leaving at $(cat "$zone/constraint_${c}_power_limit_uw")"
+            echo "unchanged: $(basename "$zone") PL$(( c + 1 )) no known good value, left at $(watts "$(cat "$zone/constraint_${c}_power_limit_uw")")"
         fi
     done
 done

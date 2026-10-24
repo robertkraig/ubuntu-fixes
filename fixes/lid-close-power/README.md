@@ -42,8 +42,12 @@ No reboot required.
 
 Close and open the lid, then:
 ```bash
-journalctl -t ubuntu-fixes/lid-closed -t ubuntu-fixes/lid-open
+journalctl -t ubuntu-fixes/lid-closed -t ubuntu-fixes/lid-open             # everything
+journalctl -t ubuntu-fixes/lid-closed -t ubuntu-fixes/lid-open -g changed: # only changes
 ```
+
+Every setting the scripts touch logs one line: `changed: <what> <before> -> <after>`,
+or `unchanged: <what> ...` with the reason (already set, or rejected by firmware).
 
 ## Files
 
